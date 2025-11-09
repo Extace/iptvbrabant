@@ -477,6 +477,32 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
 .cart-bubble .cart-icon{font-size:1.15rem}
 .cart-bubble .cart-amount{font-size:0.95rem}
 
+/* Floating install instructions box */
+.floating-help-box{
+  position:fixed;
+  right:24px;
+  bottom:24px;
+  background:#ffffff;
+  color:#3b82f6;
+  border:2px solid #3b82f6;
+  border-radius:14px;
+  padding:10px 14px;
+  font-size:0.9rem;
+  font-weight:700;
+  text-decoration:none;
+  box-shadow:0 6px 20px rgba(59,130,246,0.18);
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:background .25s, color .25s, transform .25s;
+  z-index:1100;
+}
+.floating-help-box:hover{background:#3b82f6;color:#ffffff;transform:translateY(-2px)}
+.floating-help-box:focus{outline:3px solid rgba(59,130,246,.35)}
+@media (max-width:768px){
+  .floating-help-box{right:12px;bottom:12px;padding:8px 12px;font-size:0.85rem}
+}
+
 .cart-panel{
   pointer-events:auto;
   margin-right:8px;

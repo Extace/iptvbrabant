@@ -167,7 +167,7 @@ function updateAddressRequired() {
   const hardwareSelected =
     safeInt(document.querySelector('input[name="count_android_std"]')?.value, 0) > 0 ||
     safeInt(document.querySelector('input[name="count_android_pro"]')?.value, 0) > 0 ||
-    safeInt(document.querySelector('input[name="count_apple_tv"]').value, 0) > 0;
+    safeInt(document.querySelector('input[name="count_apple_tv"]')?.value, 0) > 0;
   const addressField = document.getElementById('addressField');
   const addressLabel = document.getElementById('addressLabel');
   const requiredStar = addressLabel.querySelector('.required-star');

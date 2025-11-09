@@ -62,7 +62,7 @@ body{
 }
 .header h1{font-size:2.2rem;font-weight:800;letter-spacing:1px;color:#ffffff}
 @media(max-width:480px){.header h1{font-size:1.8rem}}
-.content{padding:40px 32px 48px;display:none}
+.content{padding:40px 32px 48px;display:none;position:relative}
 .content.active{display:block}
 .back-btn{
   position:absolute;top:16px;left:16px;
@@ -479,7 +479,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
 
 /* Floating install instructions box */
 .floating-help-box{
-  position:fixed;
+  position:absolute; /* anchor inside the selection screen */
   right:24px;
   bottom:24px;
   background:#ffffff;
@@ -495,7 +495,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   align-items:center;
   gap:8px;
   transition:background .25s, color .25s, transform .25s;
-  z-index:1100;
+  z-index:10;
 }
 .floating-help-box:hover{background:#3b82f6;color:#ffffff;transform:translateY(-2px)}
 .floating-help-box:focus{outline:3px solid rgba(59,130,246,.35)}

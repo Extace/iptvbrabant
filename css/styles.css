@@ -179,16 +179,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   padding:10px 16px; /* reduced height */
   margin:12px 0;
   transition:border-color .25s, background .25s;
-  display:flex;
-  align-items:center;
-  gap:20px;
+  display:block;
 }
 .device-item:hover{border-color:var(--color-primary)}
-.device-item .device-top{flex:1;display:flex;align-items:center;margin:0}
-.device-item .device-bottom{display:flex;align-items:center;gap:14px;margin:0}
-.device-item .price{margin:0;line-height:1}
-.device-item input[type=checkbox]{margin-right:8px;transform:translateY(1px)}
-.device-item .info-wrapper{margin-left:auto}
+.product-row{display:flex;align-items:center;gap:16px}
+.product-row input[type=checkbox]{margin-right:4px;transform:translateY(1px)}
+.product-row .device-name{flex:1}
+.product-row .price{margin:0;line-height:1}
+.product-row .info-wrapper{margin-left:8px}
 .device-item input[type=checkbox]:checked ~ .device-name{color:var(--color-primary)}
 
 /* hide old bottom layout containers when using compact row */

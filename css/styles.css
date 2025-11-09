@@ -495,7 +495,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   align-items:center;
   gap:8px;
   transition:background .25s, color .25s, transform .25s;
-  z-index:10;
+  z-index:1300; /* ensure above cart bubble */
 }
 .floating-help-box:hover{background:#3b82f6;color:#ffffff;transform:translateY(-2px)}
 .floating-help-box:focus{outline:3px solid rgba(59,130,246,.35)}

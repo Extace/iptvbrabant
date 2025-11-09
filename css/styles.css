@@ -219,7 +219,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
 }
 .warning-box{
   background:var(--color-warn-bg);
-  border-left:6px solid var(--color-warn-border);
+  /* Use a thin full outline instead of a thick left stripe */
+  border:2px solid var(--color-warn-border);
   padding:16px;
   margin:24px 0;
   font-size:1rem;

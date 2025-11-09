@@ -101,12 +101,11 @@
             <div class="product-row">
               <input type="checkbox" name="android_std" onchange="toggleCount('android_std'); updateAddressRequired()">
               <span class="device-name">Android TV Box Standaard</span>
-              <span class="price">€130</span>
+              <div id="count_android_std" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_android_std" min="1" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Android TV Box Standaard" data-tooltip="Volledige Google TV box met licentie, applicatie en installatie op locatie.">i</div></div>
-            </div>
-            <div id="count_android_std" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_android_std" min="1" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
 
@@ -114,12 +113,11 @@
             <div class="product-row">
               <input type="checkbox" name="android_pro" onchange="toggleCount('android_pro'); updateAddressRequired()">
               <span class="device-name">Android TV Box Pro (RetroGaming)</span>
-              <span class="price">€210</span>
+              <div id="count_android_pro" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_android_pro" min="1" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Android TV Box Pro" data-tooltip="Krachtigere Google TV box met emulator voor retro games inclusief controller, licentie, applicatie en installatie op locatie.">i</div></div>
-            </div>
-            <div id="count_android_pro" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_android_pro" min="1" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
 
@@ -127,12 +125,11 @@
             <div class="product-row">
               <input type="checkbox" name="apple_tv" onchange="toggleCount('apple_tv'); updateAddressRequired()">
               <span class="device-name">Apple TV Box 4K</span>
-              <span class="price">€260</span>
+              <div id="count_apple_tv" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_apple_tv" min="1" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Apple TV" data-tooltip="Apple TV 4K – Voor fans van Apple-producten! Inclusief licentie, applicatie en installatie op locatie.">i</div></div>
-            </div>
-            <div id="count_apple_tv" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_apple_tv" min="1" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
 
@@ -142,12 +139,11 @@
             <div class="product-row">
               <input type="checkbox" name="mobile_android" onchange="toggleCount('mobile_android')">
               <span class="device-name">Applicatie Android</span>
-              <span class="price">€20</span>
+              <div id="count_mobile_android" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_mobile_android" min="1" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Applicatie Android" data-tooltip="U ontvangt instructies hoe de app te installeren + installatiehulp op afstand.">i</div></div>
-            </div>
-            <div id="count_mobile_android" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_mobile_android" min="1" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
 
@@ -155,12 +151,11 @@
             <div class="product-row">
               <input type="checkbox" name="mobile_iphone" onchange="toggleCount('mobile_iphone')">
               <span class="device-name">Applicatie iPhone</span>
-              <span class="price">€20</span>
+              <div id="count_mobile_iphone" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_mobile_iphone" min="1" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Applicatie iPhone" data-tooltip="U ontvangt instructies hoe de app te installeren + installatiehulp op afstand.">i</div></div>
-            </div>
-            <div id="count_mobile_iphone" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_mobile_iphone" min="1" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
 
@@ -168,12 +163,11 @@
             <div class="product-row">
               <input type="checkbox" name="tv_license" onchange="toggleCount('tv_license'); showGoogleTvTooltip()">
               <span class="device-name">Applicatie Google TV</span>
-              <span class="price">€20</span>
+              <div id="count_tv_license" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_tv_license" min="1" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Google TV" data-tooltip="Alleen compatibel met televisies of apparaten met Google TV ingebouwd. Werkt NIET op Samsung Tizen, LG webOS, enz. + installatiehulp op afstand.">i</div></div>
-            </div>
-            <div id="count_tv_license" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_tv_license" min="1" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
 
@@ -183,12 +177,11 @@
             <div class="product-row">
               <input type="checkbox" name="extra_connectie" onchange="toggleCount('extra_connectie')">
               <span class="device-name">Extra connectie (max 2)</span>
-              <span class="price">€90</span>
+              <div id="count_extra_connectie" class="count-input inline hidden">
+                <label>Aantal:</label>
+                <input type="number" name="count_extra_connectie" min="1" max="2" placeholder="1" onchange="updateTotal()">
+              </div>
               <div class="info-wrapper"><div class="info-icon" tabindex="0" role="button" aria-label="Info: Extra connectie" data-tooltip="Voor gelijktijdig kijken op meerdere apparaten. Maximaal 2.">i</div></div>
-            </div>
-            <div id="count_extra_connectie" class="count-input hidden">
-              <span>Aantal:</span>
-              <input type="number" name="count_extra_connectie" min="1" max="2" placeholder="1" onchange="updateTotal()">
             </div>
           </div>
         </div>

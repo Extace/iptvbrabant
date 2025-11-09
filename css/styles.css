@@ -182,20 +182,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   display:block;
 }
 .device-item:hover{border-color:var(--color-primary)}
-.product-row{display:flex;align-items:center;gap:16px}
+.product-row{display:flex;align-items:center;gap:12px}
 .product-row input[type=checkbox]{margin-right:4px;transform:translateY(1px)}
-.product-row .device-name{flex:1}
+.product-row .device-name{flex:0 0 auto}
 .product-row .price{margin:0;line-height:1}
 .product-row .info-wrapper{margin-left:8px}
 .device-item input[type=checkbox]:checked ~ .device-name{color:var(--color-primary)}
+.product-row input[type=checkbox]{flex-shrink:0}
+.product-row .count-input{flex-shrink:0}
+.product-row .info-wrapper{flex-shrink:0}
 
 /* hide old bottom layout containers when using compact row */
 
 .device-top{display:flex;align-items:center;gap:12px;flex-wrap:nowrap}
 .device-name{font-weight:600;font-size:1.05rem;color:#1e293b;flex:1}
 .device-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px}
-.count-input{display:flex;align-items:center;gap:8px;font-size:0.95rem;margin-top:8px}
-.count-input input{width:80px;padding:8px;background:#ffffff;border:1px solid #e2e8f0;color:#1e293b;border-radius:12px}
+.count-input{display:flex;align-items:center;gap:6px;font-size:0.82rem;margin-top:0}
+.count-input.inline{margin-top:0}
+.count-input input{width:68px;padding:6px 8px;background:#ffffff;border:1px solid #e2e8f0;color:#1e293b;border-radius:10px;font-size:0.85rem}
 .price{color:var(--color-accent);font-weight:600;font-size:1.05rem}
 .total-box{
   background:var(--color-success-bg);

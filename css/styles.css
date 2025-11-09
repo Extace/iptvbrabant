@@ -73,17 +73,18 @@ body{
 .referral-text{
   text-align:center;
   margin:0 auto 40px;
-  max-width:380px;
+  max-width:520px;
   font-weight:700;
-  color:var(--color-primary);
+  color:#ffffff;
   font-size:1.4rem;
-  background:#1e2734;
-  padding:28px 20px;
+  background:linear-gradient(90deg,#60a5fa,#3b82f6);
+  padding:28px 24px;
   border-radius:24px;
   line-height:1.6;
-  border:1px solid var(--color-border)
+  border:0;
+  box-shadow:0 8px 24px rgba(59,130,246,0.18)
 }
-.referral-text strong{font-size:1.7rem;color:#1d4ed8}
+.referral-text strong{font-size:1.7rem;color:#ffffff}
 .logo-slider{
   width:100%;
   padding:32px 0;
@@ -323,7 +324,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
     padding: 16px 12px !important;
     margin: 0 auto 16px !important;
   }
-  .referral-text strong { font-size: 1.3rem !important; }
+  .referral-text strong { font-size: 1.3rem !important; color:#ffffff !important; }
   .logo-slider { padding: 16px 0 !important; margin: 8px 0 !important; }
   .logo-slider .swiper-slide { height: 60px !important; }
   .logo-slider img { max-height: 32px !important; }

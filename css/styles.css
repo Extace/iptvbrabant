@@ -329,6 +329,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .checkbox-group{gap:8px !important;flex-wrap:wrap !important}
   .checkbox-group input[type="checkbox"]{flex-shrink:0 !important}
   /* Mobile: allow wrapping so counter never overflows; place counter + info below name */
+/* Mobile: allow two-line layout and put product name before price; show full name without truncation */
+@media (max-width:640px){
+  .product-row{flex-wrap:wrap;align-items:flex-start}
+  .product-row .device-name{order:1;flex:1 1 100%;white-space:normal;overflow:visible;text-overflow:clip;margin-bottom:2px}
+  .product-row .price{order:2;margin-left:0}
+  .product-row .count-input.inline{order:3;margin-left:0;margin-top:2px}
+  .product-row .info-wrapper{order:4;margin-left:8px;margin-top:2px}
+  /* Keep the mandatory IPTV row on one line */
+  #fixedIptv .product-row{flex-wrap:nowrap;align-items:center}
+  #fixedIptv .product-row .device-name{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0}
+  #fixedIptv .product-row .price{margin-left:auto}
+}
   .product-row{flex-wrap:nowrap;gap:6px}
   .product-row .device-name{font-size:0.85rem !important}
   .product-row .price{font-size:0.82rem !important}

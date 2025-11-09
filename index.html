@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <!-- Advise browsers not to cache HTML; CDN headers are authoritative but this helps clients -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <meta name="robots" content="noindex,nofollow"/>
   <title>IPTV Brabant</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
   <!-- project styles (moved to css/styles.css) -->
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=20251109">
 </head>
 <body>
 <div class="container">
@@ -49,7 +53,7 @@
     <button class="submit-btn" onclick="showForm('new')">Nieuwe klant</button>
     <button class="submit-btn" onclick="showForm('recurring')">Bestaande klant</button>
   </div>
-    <div id="orderForm" class="content">
+  <div id="orderForm" class="content">
     <button class="back-btn" onclick="goBack()">Terug</button>
     <h2 id="customerTypeTitle" style="text-align:center;margin:16px 0 32px;color:#3b82f6;font-size:1.8rem;"></h2>
     <form id="form" onsubmit="return false;">
@@ -66,7 +70,7 @@
         <label id="addressLabel">Adres (voor bezorging)</label>
         <input type="text" name="address" id="addressField" placeholder="Straat, huisnummer, postcode, stad">
       </div>
-      <div class="section" id="referredSection" class="hidden">
+      <div class="section hidden" id="referredSection">
         <label>Doorverwezen door (optioneel)</label>
         <input type="text" name="referred" placeholder="Naam van de verwijzer">
       </div>
@@ -257,8 +261,8 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-<script src="js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
+<script src="js/app.js?v=20251109" defer></script>
 
 <!-- Floating shopping cart with total -->
 <div id="cartBubble" class="cart-bubble" aria-live="polite">

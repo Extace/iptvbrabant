@@ -1,4 +1,5 @@
 // Small helpers
+const ASSET_VERSION = '20251109'; // bump on deploy to bust caches
 const safeInt = (v, def = 0) => {
   const n = Number.parseInt(v, 10);
   return Number.isFinite(n) ? n : def;
@@ -40,8 +41,16 @@ function positionTooltipForIcon(icon, text) {
     tooltip.classList.add('below');
   }
 
+  // Clamp horizontally to keep tooltip on-screen (mobile-safe)
+  const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+  const margin = 8; // minimal side gap
+  const half = tooltipRect.width / 2;
+  const minCenter = margin + half;
+  const maxCenter = Math.max(minCenter, vw - margin - half);
+  const clamped = Math.min(Math.max(left, minCenter), maxCenter);
+
   tooltip.style.top = `${top}px`;
-  tooltip.style.left = `${left}px`;
+  tooltip.style.left = `${clamped}px`;
   tooltip.style.transform = 'translateX(-50%)';
 }
 
@@ -327,6 +336,19 @@ function initSliders() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Append version to local image URLs to ensure fresh loads after updates
+  try {
+    document.querySelectorAll('img[src^="images/"]').forEach(img => {
+      const src = img.getAttribute('src');
+      if (!src) return;
+      if (src.includes('?')) {
+        if (!src.includes('v=')) img.setAttribute('src', src + '&v=' + ASSET_VERSION);
+      } else {
+        img.setAttribute('src', src + '?v=' + ASSET_VERSION);
+      }
+    });
+  } catch (_) { /* safe no-op if DOM not ready */ }
+
   initSliders();
   // bind cart button behaviors
   const cartBtn = document.getElementById('cartBtn');

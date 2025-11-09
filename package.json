@@ -1,0 +1,15 @@
+{
+  "name": "iptv-brabant-website",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --ext .js,.html",
+    "format": "prettier --write \"**/*.{css,js,html,json,md}\"",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "prettier": "^2.8.8",
+    "jest": "^29.6.0"
+  }
+}

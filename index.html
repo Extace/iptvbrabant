@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title>IPTV Brabant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+  <!-- project styles (moved to css/styles.css) -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="container">
+  <div class="header" onclick="goHome()">
+    <h1>IPTV Brabant</h1>
+  </div>
+  <div id="selection" class="content active">
+    <p class="referral-text">Verwijs iemand door?<br>→<br><strong>Krijg <strong>3 maanden IPTV gratis</strong>!</strong></p>
+    <!-- STREAMING SLIDER -->
+    <div class="swiper logo-slider">
+      <div class="swiper-wrapper">
+        <div class="swiper-slide"><img src="images/Netflix.png" alt="Netflix"></div>
+        <div class="swiper-slide"><img src="images/Videoland.png" alt="Videoland"></div>
+        <div class="swiper-slide"><img src="images/Disney+.png" alt="Disney+"></div>
+        <div class="swiper-slide"><img src="images/Apple TV+.png" alt="Apple TV+"></div>
+        <div class="swiper-slide"><img src="images/Prime Video.png" alt="Prime Video"></div>
+        <div class="swiper-slide"><img src="images/Viaplay.png" alt="Viaplay"></div>
+        <div class="swiper-slide"><img src="images/npo plus.png" alt="NPO Plus"></div>
+        <div class="swiper-slide"><img src="images/ESPN.png" alt="ESPN"></div>
+        <div class="swiper-slide"><img src="images/skyshowtime.png" alt="SkyShowtime"></div>
+      </div>
+    </div>
+    <!-- SPORT SLIDER -->
+    <div class="swiper logo-slider">
+      <div class="swiper-wrapper">
+        <div class="swiper-slide"><img src="images/Eredivsie.png" alt="Eredivisie"></div>
+        <div class="swiper-slide"><img src="images/F1.png" alt="F1"></div>
+        <div class="swiper-slide"><img src="images/Premier League.png" alt="Premier League"></div>
+        <div class="swiper-slide"><img src="images/Bundesliga.png" alt="Bundesliga"></div>
+        <div class="swiper-slide"><img src="images/LaLiga.png" alt="La Liga"></div>
+        <div class="swiper-slide"><img src="images/Ligue1_.png" alt="Ligue 1"></div>
+        <div class="swiper-slide"><img src="images/serie a.png" alt="Serie A"></div>
+        <div class="swiper-slide"><img src="images/Champions League.png" alt="Champions League"></div>
+        <div class="swiper-slide"><img src="images/MotoGP.png" alt="MotoGP"></div>
+        <div class="swiper-slide"><img src="images/MXGP.png" alt="MXGP"></div>
+        <div class="swiper-slide"><img src="images/PDC.png" alt="PDC"></div>
+      </div>
+    </div>
+    <button class="submit-btn" onclick="showForm('new')">Nieuwe klant</button>
+    <button class="submit-btn" onclick="showForm('recurring')">Bestaande klant</button>
+  </div>
+    <div id="orderForm" class="content">
+    <button class="back-btn" onclick="goBack()">Terug</button>
+    <h2 id="customerTypeTitle" style="text-align:center;margin:16px 0 32px;color:#3b82f6;font-size:1.8rem;"></h2>
+    <form id="form" onsubmit="return false;">
+      <div class="section">
+        <h2>Persoonsgegevens</h2>
+        <label>Voornaam <span class="required-star">*</span></label>
+        <input type="text" name="firstName" required>
+        <label>Achternaam <span class="required-star">*</span></label>
+        <input type="text" name="lastName" required>
+        <label>Telefoonnummer <span class="required-star">*</span></label>
+        <input type="tel" name="phone" required>
+        <label>E-mail <span class="required-star">*</span></label>
+        <input type="email" name="email" required>
+        <label id="addressLabel">Adres (voor bezorging)</label>
+        <input type="text" name="address" id="addressField" placeholder="Straat, huisnummer, postcode, stad">
+      </div>
+      <div class="section" id="referredSection" class="hidden">
+        <label>Doorverwezen door (optioneel)</label>
+        <input type="text" name="referred" placeholder="Naam van de verwijzer">
+      </div>
+      <div class="section">
+        <label>Contactvoorkeur <span class="required-star">*</span></label>
+        <select name="contact" required>
+          <option value="">Kies...</option>
+          <option value="call">Telefonisch</option>
+          <option value="whatsapp">WhatsApp</option>
+        </select>
+      </div>
+      <div id="devicesSection" class="section">
+        <div id="fixedIptv" class="category-box hidden">
+          <div class="device-item">
+            <div class="device-top">
+              <span class="device-name">1 Jaar IPTV <span class="mandatory-text">(Verplicht)</span></span>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€90</span>
+            </div>
+          </div>
+        </div>
+        <div class="category-box">
+          <div class="category-title" data-base="Hardware"></div>
+          <div id="newCustomerWarning" class="warning-box hidden"><strong>Minimaal 1 apparaat of applicatie kiezen</strong>.</div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="android_std" onchange="toggleCount('android_std'); updateAddressRequired()">
+                <span class="device-name">Android TV Box Standaard</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€130</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Android TV Box Standaard" data-tooltip="Volledige Google TV box met licentie, applicatie en installatie op locatie.">i</div>
+              </div>
+            </div>
+            <div id="count_android_std" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_android_std" min="1" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="android_pro" onchange="toggleCount('android_pro'); updateAddressRequired()">
+                <span class="device-name">Android TV Box Pro (RetroGaming)</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€210</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Android TV Box Pro" data-tooltip="Krachtigere Google TV box met emulator voor retro games inclusief controller, licentie, applicatie en installatie op locatie.">i</div>
+              </div>
+            </div>
+            <div id="count_android_pro" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_android_pro" min="1" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="apple_tv" onchange="toggleCount('apple_tv'); updateAddressRequired()">
+                <span class="device-name">Apple TV Box 4K</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€260</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Apple TV" data-tooltip="Apple TV 4K – Voor fans van Apple-producten! Inclusief licentie, applicatie en installatie op locatie.">i</div>
+              </div>
+            </div>
+            <div id="count_apple_tv" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_apple_tv" min="1" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+
+          <div class="category-title" data-base="Applicaties"></div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="mobile_android" onchange="toggleCount('mobile_android')">
+                <span class="device-name">Applicatie Android</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€20</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Applicatie Android" data-tooltip="U ontvangt instructies hoe de app te installeren + installatiehulp op afstand.">i</div>
+              </div>
+            </div>
+            <div id="count_mobile_android" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_mobile_android" min="1" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="mobile_iphone" onchange="toggleCount('mobile_iphone')">
+                <span class="device-name">Applicatie iPhone</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€20</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Applicatie iPhone" data-tooltip="U ontvangt instructies hoe de app te installeren + installatiehulp op afstand.">i</div>
+              </div>
+            </div>
+            <div id="count_mobile_iphone" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_mobile_iphone" min="1" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="tv_license" onchange="toggleCount('tv_license'); showGoogleTvTooltip()">
+                <span class="device-name">Applicatie Google TV</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€20</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Google TV" data-tooltip="Alleen compatibel met televisies of apparaten met Google TV ingebouwd. Werkt NIET op Samsung Tizen, LG webOS, enz. + installatiehulp op afstand.">i</div>
+              </div>
+            </div>
+            <div id="count_tv_license" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_tv_license" min="1" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+
+          <div class="device-item">
+            <div class="device-top">
+              <label class="checkbox-group">
+                <input type="checkbox" name="extra_connectie" onchange="toggleCount('extra_connectie')">
+                <span class="device-name">Extra connectie (max 2)</span>
+              </label>
+            </div>
+            <div class="device-bottom">
+              <span class="price">€90</span>
+              <div class="info-wrapper">
+                <div class="info-icon" tabindex="0" role="button" aria-label="Info: Extra connectie" data-tooltip="Voor gelijktijdig kijken op meerdere apparaten. Maximaal 2.">i</div>
+              </div>
+            </div>
+            <div id="count_extra_connectie" class="count-input hidden">
+              <span>Aantal:</span>
+              <input type="number" name="count_extra_connectie" min="1" max="2" placeholder="1" onchange="updateTotal()">
+            </div>
+          </div>
+        </div>
+      </div>
+ 	        <div class="total-box" id="total">Totaal: €90,00</div>
+      <div class="section">
+        <label>Opmerkingen (optioneel)</label>
+        <textarea name="comments" rows="3" placeholder="Extra informatie..."></textarea>
+      </div>
+      <button type="button" class="submit-btn" onclick="showSummary()">Bestelling bekijken</button>
+    </form>
+  </div>
+
+  <div id="summaryScreen" class="content">
+    <button class="back-btn" onclick="backToForm()">Terug</button>
+    <h2 style="text-align:center;margin:16px 0 32px;color:#3b82f6;font-size:1.8rem;">Bestelling samenvatting</h2>
+    <div class="summary-box" id="summaryContent"></div>
+    <div class="confirm-box">
+      <label>
+        <input type="checkbox" id="confirmOrder"> Ik bevestig dat alle gegevens kloppen
+      </label>
+    </div>
+    <button class="submit-btn" id="placeOrderBtn" disabled>Plaats bestelling</button>
+  </div>
+
+  <div id="successScreen" class="content">
+    <h2 style="text-align:center;margin:32px 0;color:#10b981;font-size:2rem;">Bestelling ontvangen!</h2>
+    <p style="text-align:center;font-size:1.2rem;">We nemen binnen 24 uur contact op via <strong>WhatsApp</strong> of <strong>telefoon</strong>.</p>
+    <button class="submit-btn" onclick="goHome()" style="margin-top:32px;">Terug naar start</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="js/app.js"></script>
+
+<!-- Floating shopping cart with total -->
+<div id="cartBubble" class="cart-bubble" aria-live="polite">
+  <button class="cart-btn" id="cartBtn" aria-label="Bekijk winkelwagen" title="Bekijk winkelwagen">
+    <span class="cart-icon">🛒</span>
+    <span class="cart-amount">€0,00</span>
+  </button>
+  <div class="cart-panel hidden" id="cartPanel" role="dialog" aria-hidden="true">
+    <div class="cart-panel-inner">
+      <div class="cart-panel-row">Totaal: <strong id="cartPanelAmount">€0,00</strong></div>
+      <div class="cart-panel-actions">
+        <button type="button" class="submit-btn" onclick="showSummary()">Bekijk bestelling</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -148,8 +148,8 @@ function backToForm() { history.back(); }
 
 function resetForm() {
   document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
-  document.querySelectorAll('input[type="number"]').forEach(i => i.value = '');
-  document.querySelectorAll('.count-input').forEach(d => d.classList.add('hidden'));
+  document.querySelectorAll('input[type="number"]').forEach(i => i.value = '0');
+  document.querySelectorAll('.count-input').forEach(d => d.classList.remove('hidden'));
   document.getElementById('newCustomerWarning').classList.add('hidden');
   document.getElementById('referredSection').classList.add('hidden');
   updateAddressRequired();
@@ -159,35 +159,15 @@ function resetForm() {
 
 function showForm(type) { pushView(Views.FORM, { type }); setView(Views.FORM, { type, reset: true }); }
 
-function toggleCount(name) {
-  const checkbox = document.querySelector(`input[name="${name}"]`);
-  const countDiv = document.getElementById(`count_${name}`);
-  const input = document.querySelector(`input[name="count_${name}"]`);
-  if (checkbox.checked) {
-    countDiv.classList.remove('hidden');
-    if (!input.value) input.value = '1';
-    if (name === 'extra_connectie' && safeInt(input.value, 0) > 2) input.value = '2';
-  } else {
-    countDiv.classList.add('hidden');
-    if (input) input.value = '';
-  }
-  updateTotal();
-  updateAddressRequired();
-}
+// toggleCount no longer needed (counters are always visible)
 
-function showGoogleTvTooltip() {
-  const checkbox = document.querySelector('input[name="tv_license"]');
-  const icon = checkbox?.closest('.device-item')?.querySelector('.info-icon');
-  if (checkbox.checked && icon) {
-    positionTooltipForIcon(icon, icon.getAttribute('data-tooltip'));
-  }
-}
+function showGoogleTvTooltip() {}
 
 function updateAddressRequired() {
   const hardwareSelected =
-    document.querySelector('input[name="android_std"]').checked ||
-    document.querySelector('input[name="android_pro"]').checked ||
-    document.querySelector('input[name="apple_tv"]').checked;
+    safeInt(document.querySelector('input[name="count_android_std"]')?.value, 0) > 0 ||
+    safeInt(document.querySelector('input[name="count_android_pro"]')?.value, 0) > 0 ||
+    safeInt(document.querySelector('input[name="count_apple_tv"]').value, 0) > 0;
   const addressField = document.getElementById('addressField');
   const addressLabel = document.getElementById('addressLabel');
   const requiredStar = addressLabel.querySelector('.required-star');
@@ -219,19 +199,16 @@ function updateTotal() {
 
   let anySelected = false;
   items.forEach(item => {
-    const check = document.querySelector(`input[name="${item.name}"]`);
     const countInput = document.querySelector(`input[name="count_${item.name}"]`);
-    if (check && check.checked) {
-      anySelected = true;
-      const count = safeInt(countInput?.value, 1);
-      total += count * item.price;
-    }
+    const count = Math.max(0, safeInt(countInput?.value, 0));
+    if (count > 0) anySelected = true;
+    total += count * item.price;
   });
 
   if (isNewCustomer) total += 90; // fixed iptv fee for new customers
 
   const extraInput = document.querySelector('input[name="count_extra_connectie"]');
-  if (extraInput && extraInput.value) {
+  if (extraInput) {
     const count = Math.min(Math.max(safeInt(extraInput.value, 0), 0), 2);
     if (count > 0) anySelected = true;
     total += count * 90;
@@ -256,16 +233,22 @@ function updateTotal() {
 function showSummary() {
   const form = document.getElementById('form');
   const data = new FormData(form);
-  const hasProduct =
-    data.get('android_std') || data.get('android_pro') || data.get('apple_tv') ||
-    data.get('mobile_android') || data.get('mobile_iphone') || data.get('tv_license') ||
-    data.get('extra_connectie');
+  const counts = {
+    android_std: safeInt(data.get('count_android_std'), 0),
+    android_pro: safeInt(data.get('count_android_pro'), 0),
+    apple_tv: safeInt(data.get('count_apple_tv'), 0),
+    mobile_android: safeInt(data.get('count_mobile_android'), 0),
+    mobile_iphone: safeInt(data.get('count_mobile_iphone'), 0),
+    tv_license: safeInt(data.get('count_tv_license'), 0),
+    extra_connectie: safeInt(data.get('count_extra_connectie'), 0)
+  };
+  const hasProduct = Object.values(counts).some(v => safeInt(v, 0) > 0);
   if (isNewCustomer && !hasProduct) {
     // don't allow accidental orders without products
     alert('Kies minimaal 1 apparaat of applicatie om door te gaan.');
     return;
   }
-  const hardwareSelected = data.get('android_std') || data.get('android_pro') || data.get('apple_tv');
+  const hardwareSelected = counts.android_std > 0 || counts.android_pro > 0 || counts.apple_tv > 0;
   const address = data.get('address') || '';
   if (hardwareSelected && !address.trim()) {
     alert('Vul een adres in voor bezorging van hardware.');
@@ -292,7 +275,8 @@ function showSummary() {
   };
   const selected = [];
   Object.keys(names).forEach(key => {
-    if (data.get(key)) selected.push(`• ${names[key]}: ${data.get('count_' + key) || '1'}x`);
+    const c = safeInt(data.get('count_' + key), 0);
+    if (c > 0) selected.push(`• ${names[key]}: ${c}x`);
   });
   if (isNewCustomer) selected.unshift('• 1 Jaar IPTV (Verplicht): 1x');
   summary += selected.join('\n') + '\n\n';

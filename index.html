@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="nl" data-theme="light-refined">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -57,7 +57,7 @@
     <button class="back-btn" onclick="goBack()">Terug</button>
     <h2 id="customerTypeTitle" style="text-align:center;margin:16px 0 32px;color:#3b82f6;font-size:1.8rem;"></h2>
     <form id="form" onsubmit="return false;">
-      <div class="section">
+      <div class="section panel">
         <h2>Persoonsgegevens</h2>
         <label>Voornaam <span class="required-star">*</span></label>
         <input type="text" name="firstName" required>
@@ -70,11 +70,11 @@
         <label id="addressLabel">Adres (voor bezorging)</label>
         <input type="text" name="address" id="addressField" placeholder="Straat, huisnummer, postcode, stad">
       </div>
-      <div class="section hidden" id="referredSection">
+      <div class="section panel hidden" id="referredSection">
         <label>Doorverwezen door (optioneel)</label>
         <input type="text" name="referred" placeholder="Naam van de verwijzer">
       </div>
-      <div class="section">
+      <div class="section panel">
         <label>Contactvoorkeur <span class="required-star">*</span></label>
         <select name="contact" required>
           <option value="">Kies...</option>
@@ -234,7 +234,7 @@
         </div>
       </div>
  	        <div class="total-box" id="total">Totaal: €90,00</div>
-      <div class="section">
+      <div class="section panel">
         <label>Opmerkingen (optioneel)</label>
         <textarea name="comments" rows="3" placeholder="Extra informatie..."></textarea>
       </div>

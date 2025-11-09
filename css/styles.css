@@ -14,15 +14,16 @@
   --color-warn-border:#f59e0b;
   --color-success-bg:#f0fdf4;
   --color-success-border:#10b981;
+  --logo-surface:#ffffff;
 }
 body{
-  font-family:'Helvetica Neue',Arial,sans-serif;
-  background:linear-gradient(135deg,var(--color-bg) 0%, #16263d 100%);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+  background:var(--color-bg);
   color:var(--color-text);
-  line-height:1.8;
+  line-height:1.6;
   min-height:100vh;
   display:block;
-  padding:20px;
+  padding:24px;
 }
 .container{
   max-width:560px;
@@ -53,9 +54,9 @@ body{
   box-sizing:border-box;
 }
 .header{
-  background:linear-gradient(90deg,var(--color-primary),var(--color-primary-hover));
+  background:var(--color-primary);
   color:white;
-  padding:36px;
+  padding:32px 28px;
   text-align:center;
   border-radius:32px 32px 0 0
 }
@@ -86,7 +87,7 @@ body{
 .logo-slider{
   width:100%;
   padding:32px 0;
-  background:#ffffff; /* keep logos crisp on neutral surface */
+  background:var(--logo-surface); /* keep logos crisp on neutral surface */
   border-radius:24px;
   margin:2px 0;
   overflow:hidden
@@ -116,15 +117,15 @@ body{
 .submit-btn{
   display:block;
   width:100%;
-  padding:20px;
+  padding:16px 20px;
   border:none;
-  border-radius:20px;
-  font-size:1.5rem;
-  font-weight:700;
+  border-radius:14px;
+  font-size:1.15rem;
+  font-weight:600;
   cursor:pointer;
-  transition:all .3s ease;
-  margin:16px auto 0;
-  max-width:380px;
+  transition:background .25s ease, transform .25s ease;
+  margin:14px auto 0;
+  max-width:360px;
   text-align:center
 }
 .submit-btn:first-of-type{
@@ -146,29 +147,40 @@ body{
 }
 .section{margin-bottom:32px}
 .section h2{font-size:1.5rem;color:#3b82f6;margin-bottom:20px;font-weight:700}
+/* Subtle panel background for form sections */
+.panel{
+  background:linear-gradient(180deg,rgba(59,130,246,0.04),rgba(59,130,246,0.02));
+  border:1px solid rgba(59,130,246,0.12);
+  padding:20px 20px 8px;
+  border-radius:16px;
+}
+@media (min-width:1024px){
+  #form.form-grid .panel{padding:20px 20px 8px;}
+}
 label{display:block;margin:12px 0 8px;font-weight:600;color:#1e293b;font-size:1.1rem}
 input,select,textarea{
   width:100%;
-  padding:16px;
-  border:1px solid #e2e8f0;
-  border-radius:16px;
-  font-size:1.1rem;
+  padding:12px 14px;
+  border:1px solid var(--color-border);
+  border-radius:10px;
+  font-size:1rem;
   background:#ffffff;
   color:#1e293b;
-  transition:0.3s
+  transition:border-color .25s, box-shadow .25s;
 }
-input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 2px rgba(59,130,246,.25)}
 .checkbox-group{display:flex;align-items:center;gap:12px;margin:12px 0}
 .checkbox-group input{width:auto}
 .device-item{
   background:var(--color-surface-alt);
   border:1px solid var(--color-border);
-  border-radius:20px;
-  padding:16px;
-  margin:16px 0;
-  transition:0.3s
+  border-radius:16px;
+  padding:12px 14px;
+  margin:14px 0;
+  transition:border-color .25s, background .25s
 }
 .device-item:hover{border-color:var(--color-primary)}
+.device-item input[type=checkbox]:checked ~ .device-name{color:var(--color-primary)}
 .device-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .device-name{font-weight:600;font-size:1.15rem;color:#1e293b;flex:1}
 .device-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px}
@@ -199,9 +211,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 .category-box{
   background:var(--color-surface-alt);
   border:1px solid var(--color-border);
-  border-radius:20px;
-  padding:20px;
-  margin:28px 0
+  border-radius:18px;
+  padding:20px 22px;
+  margin:32px 0
 }
 .category-title{
   font-weight:700;
@@ -328,19 +340,89 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#3b82f6}
 }
 
 /* Desktop / large screen adjustments */
+/* Responsive wider layout */
 @media (min-width: 1024px) {
-  body { padding: 40px; }
-  .container{
-    max-width:1100px;
-    margin:40px auto;
-    border-radius:20px;
-  }
-  .content{ padding:48px 40px 64px; }
-  .logo-slider .swiper-slide{ height:120px; }
+  body { padding: 48px; }
+  .container{ max-width:1040px; margin:32px auto; }
+  .content{ padding:44px 40px 60px; }
+  .logo-slider .swiper-slide{ height:110px; }
+  #form.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:28px;}
+  #form.form-grid .section{margin-bottom:12px;}
+  #form.form-grid .section h2{grid-column:1/-1;margin-bottom:8px;}
+  #form.form-grid textarea{grid-column:1/-1;}
 }
 
 @media (max-width:480px){
   .tooltip{max-width:90%;}
+}
+
+/* THEME VARIANTS */
+[data-theme="light-refined"]{
+  --color-bg:#f5f7fa;
+  --color-surface:#ffffff;
+  --color-surface-alt:#f8fafc;
+  --color-border:#e3e8ef;
+  --color-text:#1f2937;
+  --color-text-muted:#475569;
+  --color-primary:#3b82f6;
+  --color-primary-hover:#2563eb;
+  --color-accent:#0ea66d;
+  --color-warn-bg:#fff8e1;
+  --color-warn-border:#f59e0b;
+  --color-success-bg:#ecfdf5;
+  --color-success-border:#10b981;
+  --logo-surface:#ffffff;
+}
+
+[data-theme="soft-dark"]{
+  --color-bg:#121a24;
+  --color-surface:#19232e;
+  --color-surface-alt:#202c38;
+  --color-border:#2d3a46;
+  --color-text:#e6edf3;
+  --color-text-muted:#c2cbd3;
+  --color-primary:#3b86f8;
+  --color-primary-hover:#2d6fcf;
+  --color-accent:#0ea66d;
+  --color-warn-bg:#3a2c10;
+  --color-warn-border:#f59e0b;
+  --color-success-bg:#0f2c22;
+  --color-success-border:#1cc989;
+  --logo-surface:#f3f6fa;
+}
+
+[data-theme="hybrid"]{
+  --color-bg:#eef2f6;
+  --color-surface:#ffffff;
+  --color-surface-alt:#f9fbfd;
+  --color-border:#e3e8ef;
+  --color-text:#111827;
+  --color-text-muted:#4b5563;
+  --color-primary:#3578e5;
+  --color-primary-hover:#2a62be;
+  --color-accent:#0ea66d;
+  --color-warn-bg:#fff7e6;
+  --color-warn-border:#f59e0b;
+  --color-success-bg:#ecfdf5;
+  --color-success-border:#10b981;
+  --logo-surface:#ffffff;
+}
+
+[data-theme="minimal"]{
+  --color-bg:#ffffff;
+  --color-surface:#ffffff;
+  --color-surface-alt:#ffffff;
+  --color-border:#dadfe5;
+  --color-text:#222222;
+  --color-text-muted:#525252;
+  --color-primary:#1f2937;
+  --color-primary-hover:#111827;
+  --color-accent:#1f2937;
+  --color-warn-bg:#fff8e1;
+  --color-warn-border:#eab308;
+  --color-success-bg:#f7fef9;
+  --color-success-border:#16a34a;
+  --logo-surface:#ffffff;
 }
 
 /* Floating cart bubble */

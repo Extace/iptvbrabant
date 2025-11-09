@@ -96,27 +96,55 @@ document.querySelectorAll('.info-icon').forEach(icon => {
 
 document.addEventListener('click', () => hideTooltip());
 
+// ===================== SIMPLE VIEW ROUTER =====================
+// Allow browser back/forward to move between internal screens.
+// We treat each screen as a view and sync with history + hash.
+const Views = { HOME: 'home', FORM: 'form', SUMMARY: 'summary', SUCCESS: 'success' };
+
+function setView(view, opts = {}) {
+  const sel = document.getElementById('selection');
+  const form = document.getElementById('orderForm');
+  const summary = document.getElementById('summaryScreen');
+  const success = document.getElementById('successScreen');
+  [sel, form, summary, success].forEach(el => el && el.classList.remove('active'));
+
+  switch (view) {
+    case Views.HOME:
+      sel?.classList.add('active');
+      resetForm();
+      initSliders();
+      break;
+    case Views.FORM: {
+      const type = opts.type === 'recurring' ? 'recurring' : 'new';
+      isNewCustomer = (type === 'new');
+      const fixedIptv = document.getElementById('fixedIptv');
+      fixedIptv.classList.toggle('hidden', !isNewCustomer);
+      document.getElementById('referredSection').classList.toggle('hidden', !isNewCustomer);
+      document.getElementById('newCustomerWarning').classList.toggle('hidden', !isNewCustomer);
+      document.getElementById('customerTypeTitle').textContent = isNewCustomer ? 'Nieuwe klant' : 'Bestaande klant';
+      if (opts.reset) resetForm(); else { updateAddressRequired(); updateTotal(); }
+      form?.classList.add('active');
+      break; }
+    case Views.SUMMARY:
+      summary?.classList.add('active');
+      break;
+    case Views.SUCCESS:
+      success?.classList.add('active');
+      break;
+  }
+}
+
+function pushView(view, extra = {}) {
+  const hash = view === Views.FORM ? `#form-${extra.type || 'new'}` : `#${view}`;
+  history.pushState({ v: view, ...extra }, '', hash);
+}
+
 // Navigation helpers
-function goHome() {
-  document.getElementById('orderForm').classList.remove('active');
-  document.getElementById('summaryScreen').classList.remove('active');
-  document.getElementById('successScreen').classList.remove('active');
-  document.getElementById('selection').classList.add('active');
-  resetForm();
-  initSliders();
-}
+function goHome() { pushView(Views.HOME); setView(Views.HOME); }
 
-function goBack() {
-  document.getElementById('orderForm').classList.remove('active');
-  document.getElementById('selection').classList.add('active');
-  resetForm();
-  initSliders();
-}
+function goBack() { history.back(); }
 
-function backToForm() {
-  document.getElementById('summaryScreen').classList.remove('active');
-  document.getElementById('orderForm').classList.add('active');
-}
+function backToForm() { history.back(); }
 
 function resetForm() {
   document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
@@ -129,20 +157,7 @@ function resetForm() {
   hideTooltip();
 }
 
-function showForm(type) {
-  isNewCustomer = type === 'new';
-  document.getElementById('selection').classList.remove('active');
-  document.getElementById('orderForm').classList.add('active');
-  document.getElementById('customerTypeTitle').textContent = isNewCustomer ? 'Nieuwe klant' : 'Bestaande klant';
-
-  const fixedIptv = document.getElementById('fixedIptv');
-  fixedIptv.classList.toggle('hidden', !isNewCustomer);
-  document.getElementById('referredSection').classList.toggle('hidden', !isNewCustomer);
-  document.getElementById('newCustomerWarning').classList.toggle('hidden', !isNewCustomer);
-
-  resetForm();
-  updateTotal();
-}
+function showForm(type) { pushView(Views.FORM, { type }); setView(Views.FORM, { type, reset: true }); }
 
 function toggleCount(name) {
   const checkbox = document.querySelector(`input[name="${name}"]`);
@@ -286,6 +301,7 @@ function showSummary() {
   document.getElementById('summaryContent').textContent = summary;
   document.getElementById('orderForm').classList.remove('active');
   document.getElementById('summaryScreen').classList.add('active');
+  pushView(Views.SUMMARY);
 }
 
 document.getElementById('confirmOrder')?.addEventListener('change', function() {
@@ -314,6 +330,7 @@ document.getElementById('placeOrderBtn')?.addEventListener('click', async () => 
   }
   document.getElementById('summaryScreen').classList.remove('active');
   document.getElementById('successScreen').classList.add('active');
+  pushView(Views.SUCCESS);
 });
 
 function initSliders() {
@@ -349,6 +366,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   } catch (_) { /* safe no-op if DOM not ready */ }
 
+  // Initial view selection from hash
+  const raw = (location.hash || '#home').replace('#', '');
+  if (raw.startsWith('form-')) {
+    const type = raw.split('-')[1] || 'new';
+    history.replaceState({ v: Views.FORM, type }, '', `#form-${type}`);
+    setView(Views.FORM, { type, reset: true });
+  } else if (raw === 'summary') {
+    history.replaceState({ v: Views.SUMMARY }, '', '#summary');
+    setView(Views.SUMMARY);
+  } else if (raw === 'success') {
+    history.replaceState({ v: Views.SUCCESS }, '', '#success');
+    setView(Views.SUCCESS);
+  } else {
+    history.replaceState({ v: Views.HOME }, '', '#home');
+    setView(Views.HOME);
+  }
   initSliders();
   // bind cart button behaviors
   const cartBtn = document.getElementById('cartBtn');
@@ -367,6 +400,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   // clicking outside should close any panel (handled by global click)
+});
+
+// Browser back/forward handler
+window.addEventListener('popstate', (e) => {
+  const s = e.state || { v: Views.HOME };
+  if (s.v === Views.FORM) setView(Views.FORM, { type: s.type, reset: false });
+  else setView(s.v || Views.HOME);
 });
 
 // update the floating basket display

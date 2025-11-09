@@ -339,50 +339,33 @@ function initSliders() {
   if (!sliderEls.length) return;
 
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
-  const instances = sliderEls.map((el, idx) => new Swiper(el, {
+  // Restore original mobile behaviour: move both sliders normally (no alternation), multiple logos per view like desktop scaling.
+  const instances = sliderEls.map((el) => new Swiper(el, {
     loop: true,
+    autoplay: { delay: 2500, disableOnInteraction: false },
     speed: 800,
-    slidesPerView: isMobile ? 1 : 2,
-    spaceBetween: isMobile ? 20 : 40,
+    slidesPerView: 2,
+    spaceBetween: 40,
     grabCursor: true,
-    autoplay: {
-      delay: isMobile ? 2800 : (idx % 2 === 0 ? 2600 : 3400),
-      disableOnInteraction: false,
-      reverseDirection: !isMobile && (idx % 2 === 1) // desktop: second slider scrolls opposite for cascade
-    },
     breakpoints: {
-      640: { slidesPerView: isMobile ? 1 : 3, spaceBetween: isMobile ? 20 : 50 },
+      640: { slidesPerView: 3, spaceBetween: 50 },
       768: { slidesPerView: 4, spaceBetween: 60 }
     }
   }));
 
-  // On mobile, alternate the autoplay so sliders don't move at the same time
-  if (isMobile && instances.length >= 2) {
-    const [a, b] = instances;
-    try { b.autoplay.stop(); } catch (_) {}
-    try { a.autoplay.start(); } catch (_) {}
-
-    const handoff = (current, next) => {
-      current.on('slideChangeTransitionEnd', () => {
-        // small pause to make the alternation readable
-        setTimeout(() => {
-          try { current.autoplay.stop(); } catch (_) {}
-          try { next.autoplay.start(); } catch (_) {}
-        }, 150);
-      });
-    };
-    handoff(a, b);
-    handoff(b, a);
-
-    // If orientation or size changes, reinitialize to keep behavior consistent
-    window.addEventListener('resize', () => {
-      // debounce quick changes
-      clearTimeout(window.__sliderResizeTimer);
-      window.__sliderResizeTimer = setTimeout(() => {
-        try { instances.forEach(s => s.destroy(true, true)); } catch (_) {}
-        initSliders();
-      }, 200);
-    }, { passive: true });
+  // Desktop cascade offset: shift second slider so its logos sit between the first row's logos.
+  if (!isMobile && instances.length >= 2) {
+    const second = instances[1];
+    // Wait one animation frame so slides are laid out
+    requestAnimationFrame(() => {
+      const firstSlide = second.el.querySelector('.swiper-slide');
+      if (firstSlide) {
+        const slideWidth = firstSlide.getBoundingClientRect().width;
+        const spacing = second.params.spaceBetween;
+        // Apply left padding equal to half slide + half spacing to offset between two logos.
+        second.el.querySelector('.swiper-wrapper').style.paddingLeft = ((slideWidth + spacing) / 2) + 'px';
+      }
+    });
   }
 }
 

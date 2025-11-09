@@ -159,7 +159,8 @@ body{
   #form.form-grid .panel{padding:20px 20px 8px;}
 }
 label{display:block;margin:12px 0 8px;font-weight:600;color:#1e293b;font-size:1.1rem}
-input,select,textarea{
+/* Form controls: exclude checkboxes/radios to avoid breaking product rows */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea{
   width:100%;
   padding:12px 14px;
   border:1px solid var(--color-border);
@@ -182,11 +183,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   display:block;
 }
 .device-item:hover{border-color:var(--color-primary)}
-.product-row{display:flex;align-items:center;gap:12px}
-.product-row input[type=checkbox]{margin-right:4px;transform:translateY(1px)}
-.product-row .device-name{flex:0 0 auto}
+.product-row{display:flex;align-items:center;gap:10px;min-height:40px}
+.product-row input[type=checkbox]{margin:0 2px 0 0;transform:translateY(1px);flex-shrink:0}
+.product-row .device-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem}
+.product-row .count-input.inline{margin-left:4px}
 .product-row .price{margin:0;line-height:1}
-.product-row .info-wrapper{margin-left:8px}
+.product-row .info-wrapper{margin-left:6px;flex-shrink:0}
+.device-item{position:relative}
+.device-item.selected{border-color:var(--color-primary);background:rgba(59,130,246,0.06)}
 .device-item input[type=checkbox]:checked ~ .device-name{color:var(--color-primary)}
 .product-row input[type=checkbox]{flex-shrink:0}
 .product-row .count-input{flex-shrink:0}
@@ -282,7 +286,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   position:fixed;
   padding:14px 18px;
   background:#111c28;
-  color:var(--color-text);
+  color:#f8fafc; /* ensure readable on dark tooltip bg */
   font-size:1rem;
   line-height:1.6;
   border-radius:16px;
@@ -296,7 +300,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   max-width:280px;
   width:max-content;
   text-align:center;
-  border:1px solid var(--color-border);
+  border:1px solid #0b1220;
   pointer-events:none
 }
 .tooltip.visible{opacity:1;visibility:visible}
@@ -307,8 +311,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   height:0;
   border:7px solid transparent
 }
-.tooltip.above::after{border-top-color:#1e293b;bottom:-14px;left:50%;transform:translateX(-50%)}
-.tooltip.below::after{border-bottom-color:#1e293b;top:-14px;left:50%;transform:translateX(-50%)}
+.tooltip.above::after{border-top-color:#0b1220;bottom:-14px;left:50%;transform:translateX(-50%)}
+.tooltip.below::after{border-bottom-color:#0b1220;top:-14px;left:50%;transform:translateX(-50%)}
 .no-product-warning{
   background:#fee2e2;
   border:1px solid #fca5a5;
@@ -323,7 +327,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .device-top{gap:8px !important;flex-wrap:wrap !important}
   .checkbox-group{gap:8px !important;flex-wrap:wrap !important}
   .checkbox-group input[type="checkbox"]{flex-shrink:0 !important}
-  .device-name{font-size:0.84rem !important;line-height:1.3 !important;display:-webkit-box !important;-webkit-line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;text-overflow:ellipsis !important;word-break:break-word !important;hyphens:auto !important;max-width:155px !important;flex-shrink:1 !important}
+  .device-name{font-size:0.84rem !important;line-height:1.3 !important;display:-webkit-box !important;-webkit-line-clamp:2 !important;line-clamp:2 !important;-webkit-box-orient:vertical !important;overflow:hidden !important;text-overflow:ellipsis !important;word-break:break-word !important;hyphens:auto !important;max-width:155px !important;flex-shrink:1 !important}
   .device-name{line-clamp:2}
   .info-icon{width:22px;height:22px;font-size:0.8rem}
   .tooltip{font-size:0.95rem !important;padding:12px 14px !important;max-width:220px !important}
@@ -387,6 +391,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   --color-success-border:#10b981;
   --logo-surface:#ffffff;
 }
+
+/* Improve tooltip contrast in light theme */
+[data-theme="light-refined"] .tooltip{background:#0f172a;color:#f1f5f9;border-color:#0b1220}
+[data-theme="light-refined"] .tooltip.above::after{border-top-color:#0b1220}
+[data-theme="light-refined"] .tooltip.below::after{border-bottom-color:#0b1220}
 
 [data-theme="soft-dark"]{
   --color-bg:#121a24;

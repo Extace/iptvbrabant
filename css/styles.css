@@ -378,6 +378,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .count-area .info-wrapper{order:2;margin-left:4px}
 }
 
+/* Hide count arrows on devices with a mouse/trackpad, regardless of width */
+@media (hover:hover) and (pointer:fine){
+  .count-controls{display:none !important}
+}
+
 /* Position the arrow controls under the counter on mobile (right side) */
 @media (max-width:640px){
   .count-controls{display:flex;width:100%;justify-content:flex-start;gap:8px;margin-top:2px}

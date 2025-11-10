@@ -1,0 +1,7 @@
+version: 1
+backend:
+  subdomain: YOUR_SUBDOMAIN
+  region: eu-central-1
+services:
+  hasura:
+    adminSecret: ${HASURA_GRAPHQL_ADMIN_SECRET}

@@ -321,6 +321,12 @@ function flagInteractionMode(){
   if(isDesktopLike()) document.body.classList.add('no-touch'); else document.body.classList.remove('no-touch');
 }
 flagInteractionMode();
+// Feature detect container queries; add fallback class if unsupported (older mobile browsers)
+try {
+  if (!CSS.supports('container-type: inline-size')) {
+    document.body.classList.add('no-cq');
+  }
+} catch(_) { /* very old browser */ }
 try { window.matchMedia('(hover: hover) and (pointer: fine)').addEventListener('change', flagInteractionMode); } catch(_){ }
 
 function showSummary() {
@@ -385,7 +391,12 @@ document.getElementById('confirmOrder')?.addEventListener('change', function() {
   document.getElementById('placeOrderBtn').disabled = !this.checked;
 });
 
-document.getElementById('placeOrderBtn')?.addEventListener('click', async () => {
+// Debug: confirm handler attached
+console.log('[app] Attaching placeOrderBtn handler');
+const placeBtn = document.getElementById('placeOrderBtn');
+if(!placeBtn){ console.warn('[app] placeOrderBtn not found in DOM at attach time'); }
+placeBtn?.addEventListener('click', async () => {
+  console.log('[app] placeOrderBtn clicked');
   const data = new FormData();
   const formData = new FormData(document.getElementById('form'));
   data.append('Klanttype', isNewCustomer ? 'Nieuwe klant' : 'Bestaande klant');
@@ -402,11 +413,36 @@ document.getElementById('placeOrderBtn')?.addEventListener('click', async () => 
   data.append('Opmerkingen', formData.get('comments') || 'Geen');
   try {
     await fetch('https://usebasin.com/f/cf62f7453e30', { method: 'POST', body: data });
+    console.log('[app] UseBasin POST attempted');
   } catch (e) {
-    // ignore network errors silently for now
+    console.warn('[app] UseBasin POST error', e);
   }
+
+  // Optional: also store order in Nhost (if configured)
+  try {
+    if (window.saveOrderNhost) {
+      const summaryText = document.getElementById('summaryContent').textContent
+        .split('GEKOZEN APPARATEN:')[1]?.split('TOTAAL:')[0]?.trim() || '';
+      const orderRecord = {
+        klanttype: isNewCustomer ? 'Nieuwe klant' : 'Bestaande klant',
+        naam: (formData.get('firstName') || '') + ' ' + (formData.get('lastName') || ''),
+        telefoon: formData.get('phone') || '',
+        email: formData.get('email') || '',
+        adres: formData.get('address') || '',
+        producten: summaryText,
+        totaal: document.getElementById('total').textContent.replace(/^Totaal:\s*/, ''),
+        opmerkingen: formData.get('comments') || 'Geen',
+      };
+      const res = await window.saveOrderNhost(orderRecord);
+      if(!res?.ok){ console.warn('[app] Nhost save failed', res?.error); }
+    }
+  } catch (e) {
+    console.warn('[app] Nhost save error', e);
+  }
+
   document.getElementById('summaryScreen').classList.remove('active');
   document.getElementById('successScreen').classList.add('active');
+  console.log('[app] Navigating to SUCCESS view');
   pushView(Views.SUCCESS);
 });
 
@@ -447,6 +483,22 @@ function initSliders() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Mobile install button fallback: ensure correct placement even if stale CSS served
+  try {
+    const installBtn = document.querySelector('#selection .floating-help-box');
+    if (installBtn) {
+      const vw = window.innerWidth;
+      if (vw <= 640) {
+        installBtn.classList.add('mobile-full');
+      } else {
+        installBtn.classList.remove('mobile-full');
+      }
+      window.addEventListener('resize', () => {
+        const w = window.innerWidth;
+        if (w <= 640) installBtn.classList.add('mobile-full'); else installBtn.classList.remove('mobile-full');
+      });
+    }
+  } catch(e){ console.warn('[app] install button mobile fallback error', e); }
   // Append version to local image URLs to ensure fresh loads after updates
   try {
     document.querySelectorAll('img[src^="images/"]').forEach(img => {

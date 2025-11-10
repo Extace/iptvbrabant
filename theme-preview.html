@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="light-refined">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Theme Preview · IPTV Brabant</title>
+  <link rel="stylesheet" href="css/styles.css?v=20251109"/>
+  <style>
+    .preview-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+    .chip{border:1px solid var(--color-border);background:var(--color-surface-alt);color:var(--color-text);padding:8px 12px;border-radius:999px;cursor:pointer}
+    .section-demo{margin-top:12px}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header"><h1>Theme preview</h1></div>
+  <div class="content active">
+    <div class="preview-toolbar">
+      <button class="chip" data-set-theme="light-refined">Light (Refined)</button>
+      <button class="chip" data-set-theme="soft-dark">Soft Dark</button>
+      <button class="chip" data-set-theme="hybrid">Hybrid</button>
+      <button class="chip" data-set-theme="minimal">Minimal</button>
+    </div>
+
+    <p class="referral-text">Voorbeeld van accentblok in de gekozen stijl.</p>
+
+    <div class="logo-slider" style="margin:16px 0">
+      <div class="swiper-wrapper" style="display:flex;gap:20px;justify-content:center;padding:12px">
+        <img src="images/Netflix.png" alt="Netflix logo"/>
+        <img src="images/Disney+.png" alt="Disney+ logo"/>
+        <img src="images/Prime Video.png" alt="Prime Video logo"/>
+      </div>
+    </div>
+
+    <div class="category-box section-demo">
+      <div class="category-title">Hardware</div>
+      <div class="device-item">
+        <div class="device-top">
+          <label class="checkbox-group">
+            <input type="checkbox" checked>
+            <span class="device-name">Android TV Box Standaard</span>
+          </label>
+          <div class="info-wrapper"><div class="info-icon" data-tooltip="Voorbeeld tooltip positie">i</div></div>
+        </div>
+        <div class="device-bottom"><span class="price">€130</span></div>
+      </div>
+    </div>
+
+    <form id="demo-form" class="section-demo">
+      <div class="section"><h2>Formulier</h2>
+        <label for="f1">Voornaam</label>
+        <input id="f1" type="text" placeholder="Voornaam">
+        <label for="f2">E-mail</label>
+        <input id="f2" type="email" placeholder="naam@voorbeeld.nl">
+        <label for="f3">Opmerkingen</label>
+        <textarea id="f3" rows="3" placeholder="..."></textarea>
+      </div>
+      <button type="button" class="submit-btn">Voorbeeld knop</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const root = document.documentElement;
+  const saved = localStorage.getItem('preview-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.querySelectorAll('[data-set-theme]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const theme = btn.getAttribute('data-set-theme');
+      root.setAttribute('data-theme', theme);
+      localStorage.setItem('preview-theme', theme);
+    });
+  });
+</script>
+</body>
+</html>

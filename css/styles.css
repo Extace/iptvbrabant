@@ -74,7 +74,17 @@ body{
   /* Place back button above the page title */
   .back-btn{top:16px;left:16px;padding:8px 14px;font-size:0.9rem;z-index:5}
   /* Push title down so it sits below the back button */
-  #orderForm h2#customerTypeTitle{margin-top:64px}
+  #orderForm h2#customerTypeTitle{margin-top:96px}
+}
+/* Installatie page: show back button between blue panels on mobile */
+@media (max-width:640px){
+  #instructions .mobile-back-wrapper{margin-top:18px;margin-bottom:12px}
+  #instructions .mobile-back-wrapper .back-btn{
+    position:static !important;
+    display:inline-flex;
+    margin:0;
+  }
+  #instructions .referral-text{margin-top:0 !important}
 }
 .referral-text{
   text-align:center;
@@ -272,11 +282,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   color:#1e293b
 }
 .confirm-box{
-  background:#fef3c7;
-  border-left:6px solid #f59e0b;
-  padding:20px;
-  margin:28px 0;
-  font-size:1.1rem;
+  /* Match warning-box look for consistency */
+  background:var(--color-warn-bg);
+  border:2px solid var(--color-warn-border);
+  padding:16px;
+  margin:24px 0;
+  font-size:1rem;
   color:#92400e;
   border-radius:16px
 }
@@ -345,7 +356,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .device-top{gap:8px !important;flex-wrap:wrap !important}
   .checkbox-group{gap:8px !important;flex-wrap:wrap !important}
   .checkbox-group input[type="checkbox"]{flex-shrink:0 !important}
-  /* Mobile: allow wrapping so counter never overflows; place counter + info below name */
+}
 /* Mobile: allow two-line layout and put product name before price; show full name without truncation */
 @media (max-width:640px){
   .product-row{
@@ -458,12 +469,28 @@ body.no-touch .count-controls{display:none !important}
 @media (min-width:901px){
   .product-row .price{font-size:0.9rem}
 }
+@media (max-width:360px){
   .product-row{flex-wrap:nowrap;gap:6px}
   .product-row .device-name{font-size:0.85rem !important}
   .product-row .price{font-size:0.82rem !important}
   .product-row .count-input.inline input{width:48px;padding:4px 6px;font-size:0.8rem}
   .info-icon{width:22px;height:22px;font-size:0.8rem}
   .tooltip{font-size:0.95rem !important;padding:12px 14px !important;max-width:220px !important}
+}
+
+/* Fallback for browsers without container queries: apply single-line layout on wider screens */
+@media (min-width:641px){
+  body.no-cq .product-row{
+    display:grid;
+    grid-template-columns:1fr auto auto auto;
+    grid-template-areas:"name price input info";
+    align-items:center;
+  }
+  body.no-cq .product-row .count-area{display:contents}
+  body.no-cq .product-row .count-input.inline{grid-area:input;margin:0 0 0 8px}
+  body.no-cq .product-row .info-wrapper{grid-area:info;margin-left:6px;align-self:center}
+  body.no-cq .product-row .device-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body.no-cq .product-row .count-controls{display:none !important}
 }
 @media (max-width: 480px) {
   .header { padding: 20px 16px !important; }
@@ -501,6 +528,27 @@ body.no-touch .count-controls{display:none !important}
   #form.form-grid .section{margin-bottom:12px;}
   #form.form-grid .section h2{grid-column:1/-1;margin-bottom:8px;}
   #form.form-grid textarea{grid-column:1/-1;}
+}
+
+/* FINAL mobile alignment override: always two lines on small screens
+   Line 1: name | price
+   Line 2: amount input | info icon */
+@media (max-width:640px){
+  .product-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    grid-template-areas:
+      "name price"
+      "input info";
+    align-items:start;
+    gap:10px;
+  }
+  .product-row .device-name{grid-area:name;white-space:normal;overflow:visible;text-overflow:clip}
+  .product-row .price{grid-area:price;justify-self:end;margin:0}
+  /* If JS created a wrapper, collapse it so items map directly */
+  .product-row .count-area{display:contents}
+  .product-row .count-input.inline{grid-area:input;margin:2px 8px 0 0}
+  .product-row .info-wrapper{grid-area:info;margin-left:8px;align-self:center}
 }
 
 @media (max-width:480px){
@@ -630,6 +678,15 @@ body.no-touch .count-controls{display:none !important}
   transition:background .25s, color .25s, transform .25s;
   z-index:1300; /* ensure above cart bubble */
 }
+/* Explicit mobile override class injected via JS if media query fails due to caching */
+.floating-help-box.mobile-full{
+  position:static !important;
+  display:block !important;
+  width:100% !important;
+  margin:18px 0 4px !important;
+  text-align:center !important;
+  justify-content:center !important;
+}
 .floating-help-box:hover{background:#3b82f6;color:#ffffff;transform:translateY(-2px)}
 .floating-help-box:focus{outline:3px solid rgba(59,130,246,.35)}
 @media (max-width:768px){
@@ -640,6 +697,25 @@ body.no-touch .count-controls{display:none !important}
   #selection .submit-btn{display:block;width:100%}
   #selection .submit-btn + .submit-btn{margin-top:12px}
   #selection .floating-help-box{position:static;display:block;width:100%;margin:18px 0 4px;text-align:center}
+}
+
+/* Desktop: place installatie instructies directly below 'Bestaande klant' */
+@media (min-width:641px){
+  #selection .floating-help-box{
+    position:static;
+    display:block;
+    width:100%;
+    max-width:360px;           /* match submit button width */
+    margin:16px auto 0;        /* center like the other buttons */
+    text-align:center;
+    padding:16px 20px;         /* match submit button padding */
+    font-size:1.15rem;         /* match submit button font size */
+    font-weight:600;
+    border:2px solid #3b82f6;
+    color:#3b82f6;
+    background:#ffffff;
+    border-radius:14px;        /* match submit button radius */
+  }
 }
 
 .cart-panel{

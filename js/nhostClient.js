@@ -41,7 +41,9 @@ async function loadNhostClient() {
 
   if (FORCE_FALLBACK) {
     console.warn('[nhost] Skipping CDN imports on this domain; using direct GraphQL fallback.');
-    const GQL_ENDPOINT = `https://${NHOST_SUBDOMAIN}.nhost.run/v1/graphql`;
+    const endpointBase = (typeof window !== 'undefined' && window.NHOST_PROXY_URL_BASE) ? window.NHOST_PROXY_URL_BASE : `https://${NHOST_SUBDOMAIN}.nhost.run`;
+    const GQL_ENDPOINT = `${endpointBase}/v1/graphql`;
+    console.info('[nhost] GraphQL endpoint (fallback):', GQL_ENDPOINT, 'from origin', location.origin);
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
     window.saveOrderNhost = async (order) => {
       try {
@@ -70,7 +72,9 @@ async function loadNhostClient() {
   if (!NhostClient) {
     console.warn('[nhost] All CDN imports failed; enabling direct GraphQL fallback (anonymous).');
     // Direct GraphQL endpoint pattern (Nhost v2): https://<subdomain>.nhost.run/v1/graphql
-    const GQL_ENDPOINT = `https://${NHOST_SUBDOMAIN}.nhost.run/v1/graphql`;
+    const endpointBase2 = (typeof window !== 'undefined' && window.NHOST_PROXY_URL_BASE) ? window.NHOST_PROXY_URL_BASE : `https://${NHOST_SUBDOMAIN}.nhost.run`;
+    const GQL_ENDPOINT = `${endpointBase2}/v1/graphql`;
+    console.info('[nhost] GraphQL endpoint (fallback after import fail):', GQL_ENDPOINT, 'from origin', location.origin);
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
     window.saveOrderNhost = async (order) => {
       try {

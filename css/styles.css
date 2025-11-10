@@ -189,9 +189,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   display:block;
 }
 .device-item:hover{border-color:var(--color-primary)}
-.product-row{display:flex;align-items:center;gap:10px;min-height:40px;flex-wrap:nowrap}
-.product-row .device-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.95rem}
-.product-row .price{color:var(--color-accent);font-weight:700;font-size:0.95rem;flex-shrink:0}
+.product-row{
+  /* Container-based layout so desktop/mobile changes don't conflict */
+  container-type:inline-size;
+  display:grid;
+  grid-template-columns:1fr auto; /* name | price */
+  grid-template-areas:
+    "name price"
+    "area area"; /* actions + controls stack below on narrow widths */
+  align-items:center;
+  gap:10px;
+  min-height:40px;
+}
+.product-row .device-name{grid-area:name;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;font-size:0.95rem}
+.product-row .price{grid-area:price;color:var(--color-accent);font-weight:700;font-size:0.95rem;flex-shrink:0}
 .product-row .count-input.inline{margin-left:6px}
 .product-row .price{margin:0;line-height:1}
 .product-row .info-wrapper{margin-left:6px;flex-shrink:0}
@@ -337,10 +348,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   /* Mobile: allow wrapping so counter never overflows; place counter + info below name */
 /* Mobile: allow two-line layout and put product name before price; show full name without truncation */
 @media (max-width:640px){
-  .product-row{flex-wrap:wrap;align-items:flex-start}
-  .product-row .device-name{order:1;flex:1 1 100%;white-space:normal;overflow:visible;text-overflow:clip;margin-bottom:2px}
-  .product-row .price{order:2;margin-left:0}
-  .product-row .count-area{order:3;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:2px}
+  .product-row{
+    grid-template-columns:1fr auto; /* name | price */
+    grid-template-areas:
+      "name price"
+      "area area";
+    align-items:start;
+  }
+  .product-row .device-name{margin-bottom:2px}
+  .product-row .price{margin-left:0}
+  .product-row .count-area{grid-area:area;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:2px}
   .product-row .count-area .count-input.inline{margin:0}
   .product-row .count-area .info-wrapper{margin-left:0;align-self:flex-start}
   /* Keep the mandatory IPTV row on one line */
@@ -369,6 +386,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   /* Ensure info icon sits above (visually) the down arrow by stacking elements */
   .count-area .info-wrapper{order:1}
   .count-controls{order:2}
+}
+
+/* Container queries: promote single-line layout and hide controls on wider cards */
+@container (min-width:520px){
+  .product-row{
+    grid-template-columns:1fr auto auto auto; /* name | price | input | info */
+    grid-template-areas:"name price input info";
+  }
+  .product-row .count-area{display:contents}
+  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 6px}
+  .product-row .count-area .info-wrapper{grid-area:info;margin-left:6px;align-self:center}
+  .product-row .device-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .product-row .count-controls{display:none !important}
+}
+
+/* Container query: on very narrow cards, ensure controls are visible */
+@container (max-width:420px){
+  .product-row .count-controls{display:flex}
 }
 
 /* Desktop/tablet: keep single line but show product name before price */

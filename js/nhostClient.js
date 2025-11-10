@@ -28,9 +28,29 @@ async function loadNhostClient() {
 (async () => {
   const NhostClient = await loadNhostClient();
   if (!NhostClient) {
-    console.warn('[nhost] All CDN imports failed; order persistence disabled.');
-    window.saveOrderNhost = async () => ({ ok: false, error: 'Nhost client load failed' });
-    return;
+    console.warn('[nhost] All CDN imports failed; enabling direct GraphQL fallback (anonymous).');
+    // Direct GraphQL endpoint pattern (Nhost v2): https://<subdomain>.nhost.run/v1/graphql
+    const GQL_ENDPOINT = `https://${NHOST_SUBDOMAIN}.nhost.run/v1/graphql`;
+    const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+    window.saveOrderNhost = async (order) => {
+      try {
+        const res = await fetch(GQL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }, // no admin secret for security
+          body: JSON.stringify({ query: mutation, variables: { object: order } })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.errors) {
+          console.warn('[nhost] fallback insert failed', json.errors || res.statusText);
+          return { ok: false, error: json.errors || res.statusText };
+        }
+        return { ok: true, id: json.data?.insert_orders_one?.id };
+      } catch (e) {
+        console.warn('[nhost] network/parse error fallback', e);
+        return { ok: false, error: e };
+      }
+    };
+    return; // done; using fallback only
   }
   const nhost = new NhostClient({ subdomain: NHOST_SUBDOMAIN, region: NHOST_REGION });
   window.nhost = nhost;

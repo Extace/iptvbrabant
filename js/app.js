@@ -113,6 +113,9 @@ function setView(view, opts = {}) {
       sel?.classList.add('active');
       resetForm();
       initSliders();
+      // Hide cart bubble on the main selection page
+      const cbHome = document.getElementById('cartBubble');
+      if (cbHome) cbHome.style.display = 'none';
       break;
     case Views.FORM: {
       const type = opts.type === 'recurring' ? 'recurring' : 'new';
@@ -125,13 +128,20 @@ function setView(view, opts = {}) {
       if (opts.reset) resetForm(); else { updateAddressRequired(); updateTotal(); }
       // ensure mobile count controls exist
       try { attachCountControls(); } catch (e) {}
+      // Show cart bubble on form/other views
+      const cbForm = document.getElementById('cartBubble');
+      if (cbForm) cbForm.style.display = 'flex';
       form?.classList.add('active');
       break; }
     case Views.SUMMARY:
       summary?.classList.add('active');
+      const cbSum = document.getElementById('cartBubble');
+      if (cbSum) cbSum.style.display = 'flex';
       break;
     case Views.SUCCESS:
       success?.classList.add('active');
+      const cbSuc = document.getElementById('cartBubble');
+      if (cbSuc) cbSuc.style.display = 'none';
       break;
   }
 }

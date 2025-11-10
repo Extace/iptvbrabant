@@ -71,9 +71,10 @@ body{
 }
 .back-btn:hover{background:#475569}
 @media (max-width:640px){
-  /* Prevent overlap with heading by lowering button slightly and shrinking */
-  .back-btn{top:70px;left:20px;padding:8px 14px;font-size:0.9rem;z-index:5}
-  #orderForm h2#customerTypeTitle{margin-top:36px}
+  /* Place back button above the page title */
+  .back-btn{top:16px;left:16px;padding:8px 14px;font-size:0.9rem;z-index:5}
+  /* Push title down so it sits below the back button */
+  #orderForm h2#customerTypeTitle{margin-top:64px}
 }
 .referral-text{
   text-align:center;
@@ -347,11 +348,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   #fixedIptv .product-row .price{margin-left:auto}
 }
 /* Count controls (mobile) */
-.count-controls{display:flex;flex-direction:row;gap:6px;margin-top:4px;width:100%}
+.count-controls{display:flex;flex-direction:row;gap:6px;margin-top:6px}
 .count-controls .count-btn{flex:1;background:#1e293b;color:#fff;border:none;border-radius:10px;padding:8px 0;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);transition:background .25s,transform .25s}
 .count-controls .count-btn:hover{background:#334155}
 .count-controls .count-btn:active{transform:translateY(1px)}
 @media (min-width:641px){.count-controls{display:none}}
+
+/* Position the arrow controls under the counter on mobile (right side) */
+@media (max-width:640px){
+  .count-controls{order:5;width:112px;margin-left:auto;justify-content:space-between}
+  .count-controls .count-btn{flex:0 0 54px}
+}
 
 /* Desktop/tablet: keep single line but show product name before price */
 @media (min-width:641px){
@@ -579,7 +586,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .cart-bubble{
     right:12px;
     left:auto;
-    top:12px;
+    top:16px; /* align with back button */
     bottom:auto;
     align-items:flex-start;
   }

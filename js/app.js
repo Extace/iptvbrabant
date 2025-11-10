@@ -265,17 +265,17 @@ function attachCountControls() {
     const ctrl = document.createElement('div');
     ctrl.className = 'count-controls';
 
-    const btnDec = document.createElement('button');
-    btnDec.type = 'button';
-    btnDec.className = 'count-btn dec';
-    btnDec.setAttribute('aria-label', 'Verlaag aantal');
-    btnDec.textContent = '▼';
-
     const btnInc = document.createElement('button');
     btnInc.type = 'button';
     btnInc.className = 'count-btn inc';
     btnInc.setAttribute('aria-label', 'Verhoog aantal');
     btnInc.textContent = '▲';
+
+  const btnDec = document.createElement('button');
+  btnDec.type = 'button';
+  btnDec.className = 'count-btn dec';
+  btnDec.setAttribute('aria-label', 'Verlaag aantal');
+  btnDec.textContent = '▼';
 
     const apply = (delta) => {
       const min = safeInt(input.getAttribute('min'), 0);
@@ -290,8 +290,9 @@ function attachCountControls() {
     btnDec.addEventListener('click', () => apply(-1));
     btnInc.addEventListener('click', () => apply(1));
 
-    ctrl.appendChild(btnDec);
-    ctrl.appendChild(btnInc);
+  // Desired order: UP on the left, DOWN on the right
+  ctrl.appendChild(btnInc);
+  ctrl.appendChild(btnDec);
 
     // Place inside the count-area so it can flow beneath input + info on mobile
     area.appendChild(ctrl);

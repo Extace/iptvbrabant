@@ -123,6 +123,8 @@ function setView(view, opts = {}) {
       document.getElementById('newCustomerWarning').classList.toggle('hidden', !isNewCustomer);
       document.getElementById('customerTypeTitle').textContent = isNewCustomer ? 'Nieuwe klant' : 'Bestaande klant';
       if (opts.reset) resetForm(); else { updateAddressRequired(); updateTotal(); }
+      // ensure mobile count controls exist
+      try { attachCountControls(); } catch (e) {}
       form?.classList.add('active');
       break; }
     case Views.SUMMARY:
@@ -228,6 +230,49 @@ function updateTotal() {
   } else {
     warn.classList.add('hidden');
   }
+}
+
+// Attach increment/decrement controls under counters for mobile usability
+function attachCountControls() {
+  document.querySelectorAll('.count-input.inline input[type="number"]').forEach(input => {
+    const parentRow = input.closest('.product-row');
+    if (!parentRow) return;
+    if (parentRow.querySelector('.count-controls')) return; // avoid duplicates
+
+    const ctrl = document.createElement('div');
+    ctrl.className = 'count-controls';
+
+    const btnDec = document.createElement('button');
+    btnDec.type = 'button';
+    btnDec.className = 'count-btn dec';
+    btnDec.setAttribute('aria-label', 'Verlaag aantal');
+    btnDec.textContent = '▼';
+
+    const btnInc = document.createElement('button');
+    btnInc.type = 'button';
+    btnInc.className = 'count-btn inc';
+    btnInc.setAttribute('aria-label', 'Verhoog aantal');
+    btnInc.textContent = '▲';
+
+    const apply = (delta) => {
+      const min = safeInt(input.getAttribute('min'), 0);
+      const max = safeInt(input.getAttribute('max'), 999);
+      let val = safeInt(input.value, 0) + delta;
+      val = Math.min(Math.max(val, min), max);
+      input.value = val;
+      updateTotal();
+      try { updateAddressRequired(); } catch (e) {}
+    };
+
+    btnDec.addEventListener('click', () => apply(-1));
+    btnInc.addEventListener('click', () => apply(1));
+
+    ctrl.appendChild(btnDec);
+    ctrl.appendChild(btnInc);
+
+    // insert after count input (so it appears below on mobile)
+    parentRow.appendChild(ctrl);
+  });
 }
 
 function showSummary() {

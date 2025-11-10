@@ -214,7 +214,9 @@
      window.NHOST_PROXY_URL_BASE = 'https://api.iptvbrabant.work';
      or use your workers.dev URL like 'https://iptv-proxy.yourname.workers.dev' -->
 <script>
-  // window.NHOST_PROXY_URL_BASE = 'https://api.iptvbrabant.work';
+  // Cloudflare Worker proxy enabled to bypass direct Nhost CORS.
+  // If you later switch to a custom route (api.iptvbrabant.work), update the URL below.
+  window.NHOST_PROXY_URL_BASE = 'https://gentle-sun-4d7b.teunrelou.workers.dev';
 </script>
 <!-- Optional Nhost JS SDK via CDN for static sites; can be removed if not used -->
 <script type="module" src="js/nhostClient.js?v=20251110" defer></script>

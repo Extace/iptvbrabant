@@ -341,6 +341,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   #fixedIptv .product-row .device-name{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0}
   #fixedIptv .product-row .price{margin-left:auto}
 }
+
+/* Desktop/tablet: keep single line but show product name before price */
+@media (min-width:641px){
+  .product-row{flex-wrap:nowrap}
+  .product-row .device-name{order:1}
+  .product-row .price{order:2}
+  .product-row .count-input.inline{order:3}
+  .product-row .info-wrapper{order:4}
+}
+
+/* Desktop font size: make the amount a bit smaller */
+@media (min-width:901px){
+  .product-row .price{font-size:0.9rem}
+}
   .product-row{flex-wrap:nowrap;gap:6px}
   .product-row .device-name{font-size:0.85rem !important}
   .product-row .price{font-size:0.82rem !important}

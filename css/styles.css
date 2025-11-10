@@ -349,7 +349,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   #fixedIptv .product-row .price{margin-left:auto}
 }
 /* Count controls (mobile) */
-.count-controls{display:flex;flex-direction:row;gap:6px;margin-top:6px}
+.count-controls{display:none;flex-direction:row;gap:6px;margin-top:6px}
 .count-controls .count-btn{flex:1;background:#1e293b;color:#fff;border:none;border-radius:10px;padding:8px 0;font-size:0.85rem;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.25);transition:background .25s,transform .25s}
 .count-controls .count-btn:hover{background:#334155}
 .count-controls .count-btn:active{transform:translateY(1px)}
@@ -363,7 +363,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
 
 /* Position the arrow controls under the counter on mobile (right side) */
 @media (max-width:640px){
-  .count-controls{width:100%;justify-content:flex-start;gap:8px;margin-top:2px}
+  .count-controls{display:flex;width:100%;justify-content:flex-start;gap:8px;margin-top:2px}
   .count-controls .count-btn{flex:0 0 44px;padding:6px 0;border-radius:8px;font-size:0.75rem}
   .count-area{width:120px;position:relative}
   /* Ensure info icon sits above (visually) the down arrow by stacking elements */

@@ -59,8 +59,26 @@ async function loadNhostClient() {
         console.log('[nhost] insert success (fallback)', id);
         return { ok: true, id };
       } catch (e) {
-        console.warn('[nhost] network/parse error fallback', e);
-        return { ok: false, error: e };
+        console.warn('[nhost] network/parse error fallback (json)', e);
+        // Retry once as a CORS-simple request (text/plain) to avoid preflight issues
+        try {
+          const res2 = await fetch(GQL_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=UTF-8', 'Accept': 'application/json' },
+            body: JSON.stringify({ query: mutation, variables: { object: order } })
+          });
+          const json2 = await res2.json().catch(() => ({}));
+          if (!res2.ok || json2.errors) {
+            console.warn('[nhost] fallback insert failed (text/plain)', json2.errors || res2.statusText);
+            return { ok: false, error: json2.errors || res2.statusText };
+          }
+          const id2 = json2.data?.insert_orders_one?.id;
+          console.log('[nhost] insert success (fallback text/plain)', id2);
+          return { ok: true, id: id2 };
+        } catch (e2) {
+          console.warn('[nhost] network/parse error fallback (text/plain)', e2);
+          return { ok: false, error: e2 };
+        }
       }
     };
     return; // done; using fallback only
@@ -88,8 +106,26 @@ async function loadNhostClient() {
         console.log('[nhost] insert success (fallback)', id);
         return { ok: true, id };
       } catch (e) {
-        console.warn('[nhost] network/parse error fallback', e);
-        return { ok: false, error: e };
+        console.warn('[nhost] network/parse error fallback (json)', e);
+        // Retry once as a CORS-simple request (text/plain) to avoid preflight issues
+        try {
+          const res2 = await fetch(GQL_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=UTF-8', 'Accept': 'application/json' },
+            body: JSON.stringify({ query: mutation, variables: { object: order } })
+          });
+          const json2 = await res2.json().catch(() => ({}));
+          if (!res2.ok || json2.errors) {
+            console.warn('[nhost] fallback insert failed (text/plain)', json2.errors || res2.statusText);
+            return { ok: false, error: json2.errors || res2.statusText };
+          }
+          const id2 = json2.data?.insert_orders_one?.id;
+          console.log('[nhost] insert success (fallback text/plain)', id2);
+          return { ok: true, id: id2 };
+        } catch (e2) {
+          console.warn('[nhost] network/parse error fallback (text/plain)', e2);
+          return { ok: false, error: e2 };
+        }
       }
     };
     return; // done; using fallback only

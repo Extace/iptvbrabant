@@ -401,6 +401,8 @@ placeBtn?.addEventListener('click', async () => {
   // Order persistence handled via Nhost only (legacy external form removed)
 
   // Store order in Nhost (if configured)
+  let saveOk = false;
+  let saveErr = null;
   try {
     if (window.saveOrderNhost) {
       const summaryText = document.getElementById('summaryContent').textContent
@@ -418,18 +420,33 @@ placeBtn?.addEventListener('click', async () => {
       const res = await window.saveOrderNhost(orderRecord);
       if(!res?.ok){
         console.warn('[app] Nhost save failed', res?.error);
+        saveErr = res?.error || 'Onbekende fout';
       } else {
         console.log('[app] Nhost insert success id', res.id);
+        saveOk = true;
       }
     }
   } catch (e) {
     console.warn('[app] Nhost save error', e);
+    saveErr = e;
   }
-
-  document.getElementById('summaryScreen').classList.remove('active');
-  document.getElementById('successScreen').classList.add('active');
-  console.log('[app] Navigating to SUCCESS view');
-  pushView(Views.SUCCESS);
+  if (saveOk) {
+    document.getElementById('summaryScreen').classList.remove('active');
+    document.getElementById('successScreen').classList.add('active');
+    console.log('[app] Navigating to SUCCESS view');
+    pushView(Views.SUCCESS);
+  } else {
+    // show inline error message (create if missing)
+    let errBox = document.getElementById('orderErrorBox');
+    if(!errBox){
+      errBox = document.createElement('div');
+      errBox.id = 'orderErrorBox';
+      errBox.style.cssText = 'margin-top:16px;padding:12px;border:1px solid #dc2626;background:#fee2e2;color:#991b1b;border-radius:8px;font-size:0.95rem;white-space:pre-line;';
+      const summaryScreen = document.getElementById('summaryScreen');
+      summaryScreen.appendChild(errBox);
+    }
+    errBox.textContent = 'Bestelling opslaan mislukt. Probeer opnieuw.\nFout: ' + (''+saveErr);
+  }
 });
 
 function initSliders() {

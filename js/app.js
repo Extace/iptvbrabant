@@ -397,28 +397,10 @@ const placeBtn = document.getElementById('placeOrderBtn');
 if(!placeBtn){ console.warn('[app] placeOrderBtn not found in DOM at attach time'); }
 placeBtn?.addEventListener('click', async () => {
   console.log('[app] placeOrderBtn clicked');
-  const data = new FormData();
   const formData = new FormData(document.getElementById('form'));
-  data.append('Klanttype', isNewCustomer ? 'Nieuwe klant' : 'Bestaande klant');
-  data.append('Naam', (formData.get('firstName') || '') + ' ' + (formData.get('lastName') || ''));
-  data.append('Telefoon', formData.get('phone') || '');
-  data.append('email', formData.get('email') || '');
-  if (formData.get('android_std') || formData.get('android_pro') || formData.get('apple_tv')) {
-    data.append('Adres', formData.get('address') || '');
-  }
-  data.append('Doorverwezen door', formData.get('referred') || 'Geen');
-  data.append('Contact', formData.get('contact') === 'call' ? 'Telefonisch' : 'WhatsApp');
-  data.append('Gekozen apparaten', document.getElementById('summaryContent').textContent.split('GEKOZEN APPARATEN:')[1]?.split('TOTAAL:')[0]?.trim() || '');
-  data.append('Totaalbedrag', document.getElementById('total').textContent);
-  data.append('Opmerkingen', formData.get('comments') || 'Geen');
-  try {
-    await fetch('https://usebasin.com/f/cf62f7453e30', { method: 'POST', body: data });
-    console.log('[app] UseBasin POST attempted');
-  } catch (e) {
-    console.warn('[app] UseBasin POST error', e);
-  }
+  // Order persistence handled via Nhost only (legacy external form removed)
 
-  // Optional: also store order in Nhost (if configured)
+  // Store order in Nhost (if configured)
   try {
     if (window.saveOrderNhost) {
       const summaryText = document.getElementById('summaryContent').textContent

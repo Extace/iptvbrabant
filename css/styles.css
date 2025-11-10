@@ -406,6 +406,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .product-row .count-controls{display:flex}
 }
 
+/* Viewport fallback: enforce single-line layout on desktop even if container queries are unsupported */
+@media (min-width: 900px){
+  .product-row{
+    display:grid;
+    grid-template-columns:1fr auto auto auto; /* name | price | input | info */
+    grid-template-areas:"name price input info";
+    align-items:center;
+  }
+  .product-row .count-area{display:contents}
+  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 8px}
+  .product-row .count-area .info-wrapper{grid-area:info;margin-left:8px}
+  .product-row .count-controls{display:none !important}
+}
+
 /* Desktop/tablet: keep single line but show product name before price */
 @media (min-width:641px){
   .product-row{flex-wrap:nowrap}

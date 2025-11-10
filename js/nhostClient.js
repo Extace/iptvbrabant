@@ -26,6 +26,46 @@ async function loadNhostClient() {
 }
 
 (async () => {
+  // On your production domain behind Cloudflare, skip CDN module imports to avoid noisy CORS/MIME errors
+  const FORCE_FALLBACK = (() => {
+    try {
+      const h = (location.hostname || '').toLowerCase();
+      if (!h) return false;
+      if (h === 'iptvbrabant.work' || h === 'www.iptvbrabant.work') return true;
+      // Allow forcing via query param for testing: ?nhost=fallback
+      const q = new URLSearchParams(location.search);
+      if ((q.get('nhost') || '').toLowerCase() === 'fallback') return true;
+      return false;
+    } catch(_) { return false; }
+  })();
+
+  if (FORCE_FALLBACK) {
+    console.warn('[nhost] Skipping CDN imports on this domain; using direct GraphQL fallback.');
+    const GQL_ENDPOINT = `https://${NHOST_SUBDOMAIN}.nhost.run/v1/graphql`;
+    const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+    window.saveOrderNhost = async (order) => {
+      try {
+        const res = await fetch(GQL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: mutation, variables: { object: order } })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.errors) {
+          console.warn('[nhost] fallback insert failed', json.errors || res.statusText);
+          return { ok: false, error: json.errors || res.statusText };
+        }
+        const id = json.data?.insert_orders_one?.id;
+        console.log('[nhost] insert success (fallback)', id);
+        return { ok: true, id };
+      } catch (e) {
+        console.warn('[nhost] network/parse error fallback', e);
+        return { ok: false, error: e };
+      }
+    };
+    return; // done; using fallback only
+  }
+
   const NhostClient = await loadNhostClient();
   if (!NhostClient) {
     console.warn('[nhost] All CDN imports failed; enabling direct GraphQL fallback (anonymous).');

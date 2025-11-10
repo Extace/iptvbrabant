@@ -416,7 +416,11 @@ placeBtn?.addEventListener('click', async () => {
         opmerkingen: formData.get('comments') || 'Geen',
       };
       const res = await window.saveOrderNhost(orderRecord);
-      if(!res?.ok){ console.warn('[app] Nhost save failed', res?.error); }
+      if(!res?.ok){
+        console.warn('[app] Nhost save failed', res?.error);
+      } else {
+        console.log('[app] Nhost insert success id', res.id);
+      }
     }
   } catch (e) {
     console.warn('[app] Nhost save error', e);

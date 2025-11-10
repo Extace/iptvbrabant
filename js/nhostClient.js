@@ -44,7 +44,9 @@ async function loadNhostClient() {
           console.warn('[nhost] fallback insert failed', json.errors || res.statusText);
           return { ok: false, error: json.errors || res.statusText };
         }
-        return { ok: true, id: json.data?.insert_orders_one?.id };
+        const id = json.data?.insert_orders_one?.id;
+        console.log('[nhost] insert success (fallback)', id);
+        return { ok: true, id };
       } catch (e) {
         console.warn('[nhost] network/parse error fallback', e);
         return { ok: false, error: e };
@@ -63,7 +65,9 @@ async function loadNhostClient() {
         console.warn('[nhost] order insert error', error);
         return { ok: false, error };
       }
-      return { ok: true, id: data?.insert_orders_one?.id };
+      const id = data?.insert_orders_one?.id;
+      console.log('[nhost] insert success (sdk)', id);
+      return { ok: true, id };
     } catch (e) {
       console.warn('[nhost] unexpected save error', e);
       return { ok: false, error: e };

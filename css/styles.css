@@ -340,8 +340,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .product-row{flex-wrap:wrap;align-items:flex-start}
   .product-row .device-name{order:1;flex:1 1 100%;white-space:normal;overflow:visible;text-overflow:clip;margin-bottom:2px}
   .product-row .price{order:2;margin-left:0}
-  .product-row .count-input.inline{order:3;margin-left:0;margin-top:2px}
-  .product-row .info-wrapper{order:4;margin-left:8px;margin-top:2px}
+  .product-row .count-area{order:3;display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:2px}
+  .product-row .count-area .count-input.inline{margin:0}
+  .product-row .count-area .info-wrapper{margin-left:0}
   /* Keep the mandatory IPTV row on one line */
   #fixedIptv .product-row{flex-wrap:nowrap;align-items:center}
   #fixedIptv .product-row .device-name{flex:1 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0}
@@ -356,8 +357,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
 
 /* Position the arrow controls under the counter on mobile (right side) */
 @media (max-width:640px){
-  .count-controls{order:5;width:112px;margin-left:auto;justify-content:space-between}
-  .count-controls .count-btn{flex:0 0 54px}
+  .count-controls{width:100%;justify-content:flex-start;gap:8px;margin-top:2px}
+  .count-controls .count-btn{flex:0 0 44px;padding:6px 0;border-radius:8px;font-size:0.75rem}
+  .count-area{width:120px}
 }
 
 /* Desktop/tablet: keep single line but show product name before price */

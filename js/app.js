@@ -249,6 +249,19 @@ function attachCountControls() {
     if (!parentRow) return;
     if (parentRow.querySelector('.count-controls')) return; // avoid duplicates
 
+    // Ensure a wrapper that contains the counter and info icon so controls can sit below both
+    const countDiv = input.closest('.count-input');
+    const infoDiv = parentRow.querySelector('.info-wrapper');
+    let area = parentRow.querySelector('.count-area');
+    if (!area) {
+      area = document.createElement('div');
+      area.className = 'count-area';
+      // Insert wrapper before the count div, then move elements inside
+      parentRow.insertBefore(area, countDiv);
+      area.appendChild(countDiv);
+      if (infoDiv) area.appendChild(infoDiv);
+    }
+
     const ctrl = document.createElement('div');
     ctrl.className = 'count-controls';
 
@@ -280,8 +293,8 @@ function attachCountControls() {
     ctrl.appendChild(btnDec);
     ctrl.appendChild(btnInc);
 
-    // insert after count input (so it appears below on mobile)
-    parentRow.appendChild(ctrl);
+    // Place inside the count-area so it can flow beneath input + info on mobile
+    area.appendChild(ctrl);
   });
 }
 

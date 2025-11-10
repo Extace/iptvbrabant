@@ -354,12 +354,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
 .count-controls .count-btn:hover{background:#334155}
 .count-controls .count-btn:active{transform:translateY(1px)}
 @media (min-width:641px){.count-controls{display:none}}
+@media (min-width:641px){
+  /* On desktop hide arrow controls entirely */
+  .count-controls{display:none !important}
+  .count-area{display:inline-flex !important;flex-direction:row !important;align-items:center !important;gap:8px !important}
+  .count-area .info-wrapper{order:2;margin-left:4px}
+}
 
 /* Position the arrow controls under the counter on mobile (right side) */
 @media (max-width:640px){
   .count-controls{width:100%;justify-content:flex-start;gap:8px;margin-top:2px}
   .count-controls .count-btn{flex:0 0 44px;padding:6px 0;border-radius:8px;font-size:0.75rem}
-  .count-area{width:120px}
+  .count-area{width:120px;position:relative}
+  /* Ensure info icon sits above (visually) the down arrow by stacking elements */
+  .count-area .info-wrapper{order:1}
+  .count-controls{order:2}
 }
 
 /* Desktop/tablet: keep single line but show product name before price */

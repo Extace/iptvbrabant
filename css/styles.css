@@ -383,6 +383,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--color-pr
   .count-controls{display:none !important}
 }
 
+/* Extra guard: if JS detects no touch, always hide */
+body.no-touch .count-controls{display:none !important}
+
 /* Position the arrow controls under the counter on mobile (right side) */
 @media (max-width:640px){
   .count-controls{display:flex;width:100%;justify-content:flex-start;gap:8px;margin-top:2px}

@@ -243,7 +243,17 @@ function updateTotal() {
 }
 
 // Attach increment/decrement controls under counters for mobile usability
+function isDesktopLike() {
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}
+
 function attachCountControls() {
+  // Do not create custom arrows for desktop-like devices
+  if (isDesktopLike()) {
+    // Clean up any previously added controls (e.g., after resizing from mobile)
+    document.querySelectorAll('.count-controls').forEach(el => el.remove());
+    return;
+  }
   document.querySelectorAll('.count-input.inline input[type="number"]').forEach(input => {
     const parentRow = input.closest('.product-row');
     if (!parentRow) return;
@@ -298,6 +308,20 @@ function attachCountControls() {
     area.appendChild(ctrl);
   });
 }
+
+// Re-evaluate controls when device characteristics change (e.g., resizing)
+try {
+  const mql = window.matchMedia('(hover: hover) and (pointer: fine)');
+  mql.addEventListener('change', () => attachCountControls());
+  window.addEventListener('resize', () => attachCountControls());
+} catch (_) { /* older browsers */ }
+
+// Set body class to reinforce desktop hiding via CSS fallback
+function flagInteractionMode(){
+  if(isDesktopLike()) document.body.classList.add('no-touch'); else document.body.classList.remove('no-touch');
+}
+flagInteractionMode();
+try { window.matchMedia('(hover: hover) and (pointer: fine)').addEventListener('change', flagInteractionMode); } catch(_){ }
 
 function showSummary() {
   const form = document.getElementById('form');

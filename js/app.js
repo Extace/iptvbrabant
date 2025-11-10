@@ -1,5 +1,5 @@
 // Small helpers
-const ASSET_VERSION = '20251109'; // bump on deploy to bust caches
+const ASSET_VERSION = '20251110'; // bump on deploy to bust caches
 const safeInt = (v, def = 0) => {
   const n = Number.parseInt(v, 10);
   return Number.isFinite(n) ? n : def;

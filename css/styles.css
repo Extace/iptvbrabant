@@ -397,16 +397,17 @@ body.no-touch .count-controls{display:none !important}
 }
 
 /* Container queries: promote single-line layout and hide controls on wider cards */
-@container (min-width:520px){
+@container (min-width:480px){
   .product-row{
     grid-template-columns:1fr auto auto auto; /* name | price | input | info */
     grid-template-areas:"name price input info";
   }
   .product-row .count-area{display:contents}
-  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 6px}
+  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 8px}
   .product-row .count-area .info-wrapper{grid-area:info;margin-left:6px;align-self:center}
   .product-row .device-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .product-row .count-controls{display:none !important}
+  .product-row .count-area .count-input.inline input{width:64px}
 }
 
 /* Container query: on very narrow cards, ensure controls are visible */
@@ -423,9 +424,24 @@ body.no-touch .count-controls{display:none !important}
     align-items:center;
   }
   .product-row .count-area{display:contents}
-  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 8px}
+  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 10px}
   .product-row .count-area .info-wrapper{grid-area:info;margin-left:8px}
   .product-row .count-controls{display:none !important}
+  .product-row .count-area .count-input.inline input{width:64px}
+}
+
+/* Desktop-like interaction: force single-line order and hide arrows */
+@media (hover:hover) and (pointer:fine){
+  .product-row{
+    grid-template-columns:1fr auto auto auto;
+    grid-template-areas:"name price input info";
+    align-items:center;
+  }
+  .product-row .count-area{display:contents}
+  .product-row .count-area .count-input.inline{grid-area:input;margin:0 0 0 10px}
+  .product-row .count-area .info-wrapper{grid-area:info;margin-left:8px}
+  .product-row .count-controls{display:none !important}
+  .product-row .count-area .count-input.inline input{width:64px}
 }
 
 /* Desktop/tablet: keep single line but show product name before price */

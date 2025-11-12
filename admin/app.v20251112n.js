@@ -19,6 +19,7 @@ const state = {
 		supportsOrderNo: undefined, // detect if order_no exists
     // Local overrides for status when the role cannot SELECT the status column
     statusOverrides: {}, // { [orderId: string]: 'nieuw'|'in_behandeling'|'afgerond' }
+	supportsReferrerEmail: undefined, // detect if referrer_email exists
 };
 
 function loadTokens() {
@@ -527,7 +528,7 @@ async function openOrderDialog(order) {
 		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
 		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
 		${order.opmerkingen ? `<div><strong>Klantopmerking:</strong> <pre style="white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px">${order.opmerkingen}</pre></div>` : ''}
-		${order.referrer_email ? `<div><strong>Referral (e-mail):</strong> ${order.referrer_email}</div>` : ''}
+		${(state.supportsReferrerEmail !== false && order.referrer_email) ? `<div><strong>Referral (e-mail):</strong> ${order.referrer_email}</div>` : ''}
 		<div class="note-box">
 			<textarea id="noteInput" rows="3" placeholder="Interne notitie toevoegen..."></textarea>
 			<button id="addNoteBtn" class="btn">Toevoegen</button>
@@ -861,17 +862,20 @@ function wireEvents() {
 		let orderRes;
 		try {
 				if (state.supportsOrderStatus === false) {
+					const wantRef = state.supportsReferrerEmail !== false;
 					if (state.supportsOrderNo === false) {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen ${wantRef?'referrer_email':''} created_at updated_at } }`, { id });
 					} else {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen ${wantRef?'referrer_email':''} created_at updated_at } }`, { id });
 					}
 					state.supportsOrderStatus = false;
 				} else {
 					if (state.supportsOrderNo === false) {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`, { id });
+						const wantRef2 = state.supportsReferrerEmail !== false;
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen ${wantRef2?'referrer_email':''} created_at updated_at } }`, { id });
 					} else {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`, { id });
+						const wantRef3 = state.supportsReferrerEmail !== false;
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen ${wantRef3?'referrer_email':''} created_at updated_at } }`, { id });
 					}
 					state.supportsOrderStatus = true;
 				}
@@ -879,17 +883,19 @@ function wireEvents() {
 			const msg = e.message || String(e);
 				const noStatus = /field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg);
 				const noNumber = /field '\\s*order_no\\s*' not found in type:\\s*'orders'/i.test(msg);
+				const noRefEmail = /field '\\s*referrer_email\\s*' not found in type:\\s*'orders'/i.test(msg);
 				if (noStatus || noNumber) {
 					if (noStatus) state.supportsOrderStatus = false;
 					if (noNumber) state.supportsOrderNo = false;
+					if (noRefEmail) state.supportsReferrerEmail = false;
 					// retry with reduced projection
 					const base = state.supportsOrderStatus === false
 						? (state.supportsOrderNo === false
-								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`
-								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`)
+								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`
+								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`)
 						: (state.supportsOrderNo === false
-								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`
-								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`);
+								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`
+								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`);
 					orderRes = await gqlRequest(base, { id });
 				} else { throw e; }
 		}

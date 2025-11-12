@@ -162,6 +162,8 @@ const GQL = {
         telefoon
         referral_code
         created_at
+        notes
+        extra
         subscriptions_aggregate { aggregate { max { end_date } } }
       }
     }
@@ -183,6 +185,11 @@ const GQL = {
   insertCustomer: `
     mutation InsertCustomer($obj: customers_insert_input!) {
       insert_customers_one(object: $obj) { id naam email telefoon created_at }
+    }
+  `,
+  updateCustomer: `
+    mutation UpdateCustomer($id: uuid!, $changes: customers_set_input!) {
+      update_customers_by_pk(pk_columns:{id:$id}, _set:$changes){ id naam email telefoon adres notes extra updated_at }
     }
   `,
   updateSubscriptionEnd: `
@@ -248,6 +255,7 @@ function renderCustomers(list) {
         <div class="row"><strong>Einddatum:</strong> ${endStr}</div>
         <div class="actions">
           <button class="btn" data-act="referral90">+90 dagen (referral)</button>
+          <button class="btn btn-secondary" data-act="edit">Bewerken</button>
         </div>
       </div>
     `;
@@ -351,7 +359,7 @@ function wireEvents() {
     // Only usable in Customers view; switch if needed
     if (state.view !== 'customers') q('#tabCustomers').click();
     const dlg = q('#customerDialog');
-    q('#cNaam').value=''; q('#cEmail').value=''; q('#cTel').value=''; q('#cAdres').value=''; q('#cReferral').value='';
+  q('#cNaam').value=''; q('#cEmail').value=''; q('#cTel').value=''; q('#cAdres').value=''; q('#cReferral').value=''; q('#cNotes').value=''; q('#cExtra').value='';
     dlg.showModal();
     q('#createCustomerBtn').onclick = async (ev) => {
       ev.preventDefault();
@@ -362,7 +370,13 @@ function wireEvents() {
       const referral_code = q('#cReferral').value.trim() || null;
       if (!naam) { alert('Naam is verplicht'); return; }
       try {
-        await gqlRequest(GQL.insertCustomer, { obj: { naam, email, telefoon, adres, referral_code } });
+        let extra = {};
+        const rawExtra = q('#cExtra').value.trim();
+        if (rawExtra) {
+          try { extra = JSON.parse(rawExtra); } catch { alert('Extra JSON is ongeldig'); return; }
+        }
+        const notes = q('#cNotes').value.trim() || null;
+        await gqlRequest(GQL.insertCustomer, { obj: { naam, email, telefoon, adres, referral_code, notes, extra } });
         dlg.close();
         await loadAndRender();
       } catch (e) {
@@ -449,6 +463,39 @@ function wireEvents() {
       } catch (e) {
         alert('Kon referral-bonus niet toepassen: ' + (e.message || e));
       }
+    } else if (btn.dataset.act === 'edit') {
+      try {
+        // fetch full customer
+        const res = await gqlRequest(`query($id: uuid!){ customers_by_pk(id:$id){ id naam email telefoon adres referral_code notes extra } }`, { id: customerId });
+        const cust = res.customers_by_pk;
+        const dlg = q('#customerDialog');
+        q('#cNaam').value = cust.naam || '';
+        q('#cEmail').value = cust.email || '';
+        q('#cTel').value = cust.telefoon || '';
+        q('#cAdres').value = cust.adres || '';
+        q('#cReferral').value = cust.referral_code || '';
+        q('#cNotes').value = cust.notes || '';
+        q('#cExtra').value = cust.extra ? JSON.stringify(cust.extra, null, 2) : '';
+        dlg.querySelector('h3').textContent = 'Klant bewerken';
+        dlg.showModal();
+        q('#createCustomerBtn').onclick = async (ev2) => {
+          ev2.preventDefault();
+          const naam = q('#cNaam').value.trim();
+          const email = q('#cEmail').value.trim() || null;
+          const telefoon = q('#cTel').value.trim() || null;
+          const adres = q('#cAdres').value.trim() || null;
+          const referral_code = q('#cReferral').value.trim() || null;
+          const notes = q('#cNotes').value.trim() || null;
+          let extra = {};
+          const rawExtra = q('#cExtra').value.trim();
+          if (rawExtra) { try { extra = JSON.parse(rawExtra); } catch { alert('Extra JSON is ongeldig'); return; } }
+          try {
+            await gqlRequest(GQL.updateCustomer, { id: customerId, changes: { naam, email, telefoon, adres, referral_code, notes, extra } });
+            dlg.close();
+            await loadAndRender();
+          } catch (e) { alert('Kon klant niet bijwerken: ' + (e.message || e)); }
+        };
+      } catch (e) { alert('Kon klant niet laden: ' + (e.message || e)); }
     }
   });
 }

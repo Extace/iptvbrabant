@@ -376,7 +376,7 @@ async function loadAndRender() {
 }
 
 function wireEvents() {
-  q('#loginBtn').onclick = async () => {
+  const doLogin = async () => {
     setMsg(q('#authMsg'), 'Aan het inloggen...', '');
     try {
       await signIn(q('#email').value.trim(), q('#password').value);
@@ -388,6 +388,11 @@ function wireEvents() {
       setMsg(q('#authMsg'), e.message || String(e), 'error');
     }
   };
+  q('#loginBtn').onclick = (e) => { e.preventDefault(); doLogin(); };
+  const form = q('#authForm');
+  if (form) {
+    form.addEventListener('submit', (e) => { e.preventDefault(); doLogin(); });
+  }
 
   q('#refreshBtn').onclick = loadAndRender;
   q('#statusFilter').onchange = loadAndRender;

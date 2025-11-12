@@ -259,6 +259,11 @@ const GQL = {
       insert_subscription_adjustments_one(object: $obj) { id }
     }
   `,
+  insertOrder: `
+    mutation InsertOrder($obj: orders_insert_input!) {
+      insert_orders_one(object: $obj) { id }
+    }
+  `,
 };
 
 // UI logic
@@ -311,6 +316,7 @@ function renderCustomers(list) {
         <div class="actions">
           <button class="btn" data-act="referral90">+90 dagen (referral)</button>
           <button class="btn btn-secondary" data-act="edit">Bewerken</button>
+          <button class="btn btn-secondary" data-act="neworder">Nieuwe bestelling</button>
         </div>
       </div>
     `;
@@ -653,6 +659,49 @@ function wireEvents() {
           } catch (e) { alert('Kon klant niet bijwerken: ' + (e.message || e)); }
         };
       } catch (e) { alert('Kon klant niet laden: ' + (e.message || e)); }
+    } else if (btn.dataset.act === 'neworder') {
+      try {
+        // Fetch minimal customer info for prefill
+        const res = await gqlRequest(`query($id: uuid!){ customers_by_pk(id:$id){ id naam email telefoon adres } }`, { id: customerId });
+        const cust = res.customers_by_pk;
+        const dlg = q('#newOrderDialog');
+        q('#oProducten').value = '';
+        q('#oTotaal').value = '';
+        q('#oOpmerkingen').value = '';
+        dlg.showModal();
+        q('#cancelNewOrderBtn').onclick = () => dlg.close();
+        q('#createNewOrderBtn').onclick = async () => {
+          const producten = q('#oProducten').value.trim() || null;
+          const totaal = q('#oTotaal').value.trim() || null;
+          const opmerkingen = q('#oOpmerkingen').value.trim() || null;
+          const baseObj = {
+            klanttype: 'Admin — handmatig',
+            naam: cust?.naam || null,
+            telefoon: cust?.telefoon || null,
+            email: cust?.email || null,
+            adres: cust?.adres || null,
+            producten,
+            totaal,
+            opmerkingen,
+            customer_id: customerId,
+          };
+          // Try insert with status when available
+          try {
+            const withStatus = { ...baseObj, status: 'nieuw' };
+            await gqlRequest(GQL.insertOrder, { obj: withStatus });
+          } catch (e1) {
+            const msg = e1.message || String(e1);
+            if (/field '\s*status\s*' not found in type:\s*'orders_insert_input'/i.test(msg)) {
+              await gqlRequest(GQL.insertOrder, { obj: baseObj });
+            } else {
+              throw e1;
+            }
+          }
+          dlg.close();
+          // Refresh the current view; if on customers, stay there
+          await loadAndRender();
+        };
+      } catch (e) { alert('Kon nieuwe bestelling niet aanmaken: ' + (e.message || e)); }
     }
   });
 }

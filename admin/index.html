@@ -4,12 +4,12 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>IPTV Brabant — Admin</title>
-  <link rel="stylesheet" href="styles.css?v=20251112k"/>
+  <link rel="stylesheet" href="styles.css?v=20251112l"/>
 </head>
 <body>
   <div class="container">
   <h1>Admin Dashboard</h1>
-  <div class="build">Build v20251112k</div>
+  <div class="build">Build v20251112l</div>
 
     <section id="authSection" class="panel">
       <h2>Inloggen</h2>
@@ -73,6 +73,21 @@
         </form>
       </dialog>
 
+      <dialog id="newOrderDialog">
+        <form method="dialog" class="dialog">
+          <h3>Nieuwe bestelling</h3>
+          <div class="dlg-body">
+            <div class="form-row"><label for="oProducten">Producten / beschrijving</label><textarea id="oProducten" rows="3" placeholder="Bijv. Android TV Box Standaard 1x"></textarea></div>
+            <div class="form-row"><label for="oTotaal">Totaal (tekst)</label><input id="oTotaal" type="text" placeholder="€0,00"/></div>
+            <div class="form-row"><label for="oOpmerkingen">Opmerkingen</label><textarea id="oOpmerkingen" rows="3" placeholder="Interne opmerkingen"></textarea></div>
+          </div>
+          <div class="dlg-actions">
+            <button id="cancelNewOrderBtn" type="button" class="btn btn-secondary">Annuleren</button>
+            <button id="createNewOrderBtn" type="button" class="btn">Opslaan</button>
+          </div>
+        </form>
+      </dialog>
+
       <dialog id="orderDialog">
         <form method="dialog" class="dialog">
           <h3 id="dlgTitle">Bestelling</h3>
@@ -85,6 +100,6 @@
     </section>
   </div>
 
-  <script src="app.js?v=20251112k" defer></script>
+  <script src="app.js?v=20251112l" defer></script>
 </body>
 </html>

@@ -388,10 +388,12 @@ function renderCustomers(list) {
 			: days >= 60 ? `<span class="badge afgerond">${days}d</span>`
 			: days >= 14 ? `<span class="badge in_behandeling">${days}d</span>`
 			: `<span class="badge nieuw">${days}d</span>`;
+		// Mark auto-created customers for quick verification
+		const autoTag = /auto-created from order/i.test(row.notes || '') ? ' <span class="sub-meta">auto</span>' : '';
 		const endStr = end ? end.toISOString().slice(0,10) : '-';
 		return `
 			<div class="customer-card" data-id="${row.id}" data-end="${endStr}">
-				<h3>${row.naam || '(naam)'} ${badge}</h3>
+				<h3>${row.naam || '(naam)'} ${badge}${autoTag}</h3>
 				<div class="row"><strong>Contact:</strong> ${row.telefoon || '-'} · ${row.email || '-'}</div>
 				<div class="row"><strong>Einddatum:</strong> ${endStr}</div>
 				<div class="actions">

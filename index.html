@@ -74,8 +74,8 @@
         <input type="text" name="address" id="addressField" placeholder="Straat, huisnummer, postcode, stad">
       </div>
       <div class="section panel hidden" id="referredSection">
-        <label>Doorverwezen door (optioneel)</label>
-        <input type="text" name="referred" placeholder="Naam van de verwijzer">
+        <label>Doorverwezen door (optioneel, e-mail)</label>
+        <input type="email" name="referred" placeholder="email@voorbeeld.nl">
       </div>
       <div class="section panel">
         <label>Contactvoorkeur <span class="required-star">*</span></label>
@@ -236,7 +236,7 @@
 <!-- Bump asset version to force fresh load after endpoint format change -->
 <!-- Emergency hard cache-bust: new filename ensures no stale service worker/proxy usage -->
 <script type="module" src="js/nhostClient.v20251112d.js?v=3" defer></script>
-<script src="js/app.js?v=20251112c" defer></script>
+<script src="js/app.js?v=20251112d" defer></script>
 
 <!-- Floating shopping cart with total -->
 <div id="cartBubble" class="cart-bubble" aria-live="polite">

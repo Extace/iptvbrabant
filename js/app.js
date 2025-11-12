@@ -431,6 +431,7 @@ placeBtn?.addEventListener('click', async () => {
         producten: summaryText,
         totaal: document.getElementById('total').textContent.replace(/^Totaal:\s*/, ''),
         opmerkingen: formData.get('comments') || 'Geen',
+        referrer_email: (isNewCustomer ? (formData.get('referred') || '').trim().toLowerCase() : '') || null,
       };
       const res = await window.saveOrderNhost(orderRecord);
       if(!res?.ok){

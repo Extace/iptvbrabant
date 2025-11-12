@@ -11,6 +11,21 @@ let isNewCustomer = false;
 let activeTooltip = null;
 let activeIcon = null;
 
+// Helper to make API errors readable for users and logs
+function errorToString(err){
+  try{
+    if (Array.isArray(err)) {
+      return err.map(e => (e && (e.message || e.error)) ? (e.message || e.error) : JSON.stringify(e)).join('; ');
+    }
+    if (err && typeof err === 'object') {
+      if (err.message) return err.message;
+      if (err.error) return typeof err.error === 'string' ? err.error : JSON.stringify(err.error);
+      return JSON.stringify(err);
+    }
+    return String(err);
+  }catch(_){ return String(err); }
+}
+
 // === TOOLTIP SYSTEM (single element used for all icons) ===
 const tooltip = document.createElement('div');
 tooltip.className = 'tooltip';
@@ -445,7 +460,7 @@ placeBtn?.addEventListener('click', async () => {
       const summaryScreen = document.getElementById('summaryScreen');
       summaryScreen.appendChild(errBox);
     }
-    errBox.textContent = 'Bestelling opslaan mislukt. Probeer opnieuw.\nFout: ' + (''+saveErr);
+    errBox.textContent = 'Bestelling opslaan mislukt. Probeer opnieuw.\nFout: ' + errorToString(saveErr);
   }
 });
 

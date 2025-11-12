@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="nl" data-theme="light-refined">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>IPTV Brabant — Admin</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <div class="container">
+    <h1>Admin Dashboard</h1>
+
+    <section id="authSection" class="panel">
+      <h2>Inloggen</h2>
+      <div class="form-row">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" placeholder="you@example.com"/>
+      </div>
+      <div class="form-row">
+        <label for="password">Wachtwoord</label>
+        <input id="password" type="password" placeholder="••••••••"/>
+      </div>
+      <button id="loginBtn" class="btn">Log in</button>
+      <div id="authMsg" class="msg"></div>
+    </section>
+
+    <section id="appSection" class="hidden">
+      <div class="toolbar">
+        <div>
+          <button id="refreshBtn" class="btn">Vernieuwen</button>
+          <select id="statusFilter">
+            <option value="">Alle statussen</option>
+            <option value="nieuw">Nieuw</option>
+            <option value="in_behandeling">In behandeling</option>
+            <option value="afgerond">Afgerond</option>
+          </select>
+          <input id="searchInput" type="search" placeholder="Zoek naam/telefoon/email"/>
+        </div>
+        <div>
+          <button id="logoutBtn" class="btn btn-secondary">Uitloggen</button>
+        </div>
+      </div>
+
+      <div id="ordersContainer" class="list"></div>
+
+      <dialog id="orderDialog">
+        <form method="dialog" class="dialog">
+          <h3 id="dlgTitle">Bestelling</h3>
+          <div id="dlgBody" class="dlg-body"></div>
+          <div class="dlg-actions">
+            <button value="cancel" class="btn btn-secondary">Sluiten</button>
+          </div>
+        </form>
+      </dialog>
+    </section>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

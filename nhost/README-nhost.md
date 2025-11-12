@@ -40,18 +40,19 @@ You can still interact with GraphQL & Auth from the front-end via the SDK (`@nho
 npm install @nhost/nhost-js graphql
 ```
 
-Then create `js/nhostClient.js`:
-```javascript
-// Or use CDN if you don't have a bundler
-import { NhostClient } from 'https://cdn.jsdelivr.net/npm/@nhost/nhost-js@latest/dist/index.mjs';
-export const nhost = new NhostClient({ subdomain: 'YOUR_SUBDOMAIN', region: 'eu-west-2' });
-```
+Client usage (no bundler)
+The repo includes `js/nhostClient.v20251112d.js` which posts directly to the Nhost GraphQL endpoint without importing the SDK (avoids CDN MIME/CORS issues on static hosting). It defines `window.saveOrderNhost(order)`.
 
-Insert order example (after form submit):
+Minimal direct fetch example:
 ```javascript
-const mutation = `mutation InsertOrder($obj: orders_insert_input!) { insert_orders_one(object: $obj) { id } }`;
-const result = await nhost.graphql.request(mutation, { obj: { klanttype, naam, telefoon, email, producten, totaal, opmerkingen } });
-if (result.error) console.error(result.error);
+const GQL_ENDPOINT = 'https://<subdomain>.graphql.<region>.nhost.run/v1';
+const mutation = `mutation InsertOrder($object: orders_insert_input!) { insert_orders_one(object: $object) { id } }`;
+const res = await fetch(GQL_ENDPOINT, {
+   method: 'POST',
+   headers: { 'Content-Type': 'application/json' },
+   body: JSON.stringify({ query: mutation, variables: { object: order } })
+});
+const json = await res.json();
 ```
 
 ## Rename Folder (Optional)

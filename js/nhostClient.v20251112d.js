@@ -26,19 +26,9 @@ async function loadNhostClient() {
 }
 
 (async () => {
-  console.info('[nhost] client build tag', '20251112c');
-  // On your production domain behind Cloudflare, skip CDN module imports to avoid noisy CORS/MIME errors
-  const FORCE_FALLBACK = (() => {
-    try {
-      const h = (location.hostname || '').toLowerCase();
-      if (!h) return false;
-      if (h === 'iptvbrabant.work' || h === 'www.iptvbrabant.work') return true;
-      // Allow forcing via query param for testing: ?nhost=fallback
-      const q = new URLSearchParams(location.search);
-      if ((q.get('nhost') || '').toLowerCase() === 'fallback') return true;
-      return false;
-    } catch(_) { return false; }
-  })();
+  console.info('[nhost] client build tag', '20251112e');
+  // Simplified: always use direct GraphQL fallback (works for both prod and dev)
+  const FORCE_FALLBACK = true;
 
   if (FORCE_FALLBACK) {
     console.warn('[nhost] Skipping CDN imports on this domain; using direct GraphQL fallback.');
@@ -53,6 +43,26 @@ async function loadNhostClient() {
     // GraphQL lives on /v1 (not /v1/graphql) for the service endpoint
     const GQL_ENDPOINT = `${endpointBase}/v1`;
   console.info('[nhost] GraphQL endpoint (fallback):', GQL_ENDPOINT, 'from origin', location.origin);
+
+    // Optional: quick introspection to verify mutation root for anonymous role
+    (async () => {
+      try {
+        const q = new URLSearchParams(location.search);
+        const debugFlag = q.has('nhostdebug') || (q.get('nhost')||'').toLowerCase() === 'debug';
+        if (!debugFlag) return;
+        const introspection = `query __Introspection {\n  __schema {\n    mutationType { name fields { name } }\n  }\n}`;
+        const r = await fetch(GQL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-hasura-role': 'anonymous' },
+          body: JSON.stringify({ query: introspection })
+        });
+        const t = await r.text();
+        let j = null; try { j = JSON.parse(t); } catch {}
+        console.info('[nhost][debug] introspection mutationType:', j?.data?.__schema?.mutationType || j);
+      } catch (e) {
+        console.warn('[nhost][debug] introspection error', e);
+      }
+    })();
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
     window.saveOrderNhost = async (order) => {
       try {
@@ -69,8 +79,9 @@ async function loadNhostClient() {
         let json = null;
         try { json = JSON.parse(text); } catch(_) {}
         if (!res.ok || (json && json.errors)) {
-          console.warn('[nhost] fallback insert failed', json?.errors || `status ${res.status}: ${text || '<empty body>'}`);
-          return { ok: false, error: json?.errors || `status ${res.status}: ${text || '<empty body>'}` };
+          const errOut = json?.errors ? JSON.stringify(json.errors, null, 2) : `status ${res.status}: ${text || '<empty body>'}`;
+          console.warn('[nhost] fallback insert failed\n' + errOut);
+          return { ok: false, error: json?.errors || errOut };
         }
         const id = json?.data?.insert_orders_one?.id;
         console.log('[nhost] insert success (fallback)', id);
@@ -95,6 +106,26 @@ async function loadNhostClient() {
     } catch(_) {}
     const GQL_ENDPOINT = `${endpointBase2}/v1`;
   console.info('[nhost] GraphQL endpoint (fallback after import fail):', GQL_ENDPOINT, 'from origin', location.origin);
+
+    // Optional: quick introspection to verify mutation root for anonymous role
+    (async () => {
+      try {
+        const q = new URLSearchParams(location.search);
+        const debugFlag = q.has('nhostdebug') || (q.get('nhost')||'').toLowerCase() === 'debug';
+        if (!debugFlag) return;
+        const introspection = `query __Introspection {\n  __schema {\n    mutationType { name fields { name } }\n  }\n}`;
+        const r = await fetch(GQL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-hasura-role': 'anonymous' },
+          body: JSON.stringify({ query: introspection })
+        });
+        const t = await r.text();
+        let j = null; try { j = JSON.parse(t); } catch {}
+        console.info('[nhost][debug] introspection mutationType:', j?.data?.__schema?.mutationType || j);
+      } catch (e) {
+        console.warn('[nhost][debug] introspection error', e);
+      }
+    })();
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
     window.saveOrderNhost = async (order) => {
       try {
@@ -110,8 +141,9 @@ async function loadNhostClient() {
         let json = null;
         try { json = JSON.parse(text); } catch(_) {}
         if (!res.ok || (json && json.errors)) {
-          console.warn('[nhost] fallback insert failed', json?.errors || `status ${res.status}: ${text || '<empty body>'}`);
-          return { ok: false, error: json?.errors || `status ${res.status}: ${text || '<empty body>'}` };
+          const errOut = json?.errors ? JSON.stringify(json.errors, null, 2) : `status ${res.status}: ${text || '<empty body>'}`;
+          console.warn('[nhost] fallback insert failed\n' + errOut);
+          return { ok: false, error: json?.errors || errOut };
         }
         const id = json?.data?.insert_orders_one?.id;
         console.log('[nhost] insert success (fallback)', id);

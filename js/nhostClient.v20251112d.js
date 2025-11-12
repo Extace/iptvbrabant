@@ -64,8 +64,9 @@ async function loadNhostClient() {
       }
     })();
   const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id order_no }\n}`;
-    function hasReferrerFieldError(errs){
-      return Array.isArray(errs) && errs.some(e => /field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(e?.message||''));
+    function hasFieldError(errs, field){
+      const re = new RegExp("field\\s+'" + field + "'\\s+not\\s+found\\s+in\\s+type:\\s*'orders_insert_input'", 'i');
+      return Array.isArray(errs) && errs.some(e => re.test(e?.message||''));
     }
     async function postWithRole(role, payload){
       const res = await fetch(GQL_ENDPOINT, {
@@ -79,16 +80,20 @@ async function loadNhostClient() {
     }
     window.saveOrderNhost = async (order) => {
       try {
-        // Sanitize payload: drop referrer_email if empty/falsy to avoid schema mismatch
+        // Sanitize payload: default status to 'nieuw' and drop absent optional fields
         const obj = { ...order };
+        if (obj.status == null) obj.status = 'nieuw';
         if (obj.referrer_email == null || obj.referrer_email === '') delete obj.referrer_email;
         let payload = { query: mutation, variables: { object: obj } };
         // First try 'public' (current unauthorized role)
         let { res, json, text } = await postWithRole('public', payload);
-        // If role denies referrer field, retry without it once
-        if ((json && json.errors) && hasReferrerFieldError(json.errors)) {
-          if ('referrer_email' in payload.variables.object) {
-            const clone = { ...payload.variables.object }; delete clone.referrer_email;
+        // If role denies certain fields, strip and retry once
+        if (json && json.errors) {
+          const clone = { ...payload.variables.object };
+          let changed = false;
+          if (hasFieldError(json.errors, 'status') && 'status' in clone) { delete clone.status; changed = true; }
+          if (hasFieldError(json.errors, 'referrer_email') && 'referrer_email' in clone) { delete clone.referrer_email; changed = true; }
+          if (changed) {
             payload = { query: mutation, variables: { object: clone } };
             ({ res, json, text } = await postWithRole('public', payload));
           }
@@ -99,9 +104,12 @@ async function loadNhostClient() {
           if (notFound) {
             // Retry with 'anonymous' for environments still using default role
             ({ res, json, text } = await postWithRole('anonymous', payload));
-            if ((json && json.errors) && hasReferrerFieldError(json.errors)) {
-              if ('referrer_email' in payload.variables.object) {
-                const clone2 = { ...payload.variables.object }; delete clone2.referrer_email;
+            if (json && json.errors) {
+              const clone2 = { ...payload.variables.object };
+              let changed2 = false;
+              if (hasFieldError(json.errors, 'status') && 'status' in clone2) { delete clone2.status; changed2 = true; }
+              if (hasFieldError(json.errors, 'referrer_email') && 'referrer_email' in clone2) { delete clone2.referrer_email; changed2 = true; }
+              if (changed2) {
                 payload = { query: mutation, variables: { object: clone2 } };
                 ({ res, json, text } = await postWithRole('anonymous', payload));
               }
@@ -158,7 +166,7 @@ async function loadNhostClient() {
       }
     })();
   const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id order_no }\n}`;
-    function hasRefFieldErr(arr){ return Array.isArray(arr) && arr.some(e => /field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(e?.message||'')); }
+    function hasFieldErr2(arr, field){ const re = new RegExp("field\\s+'"+field+"'\\s+not\\s+found\\s+in\\s+type:\\s*'orders_insert_input'",'i'); return Array.isArray(arr) && arr.some(e => re.test(e?.message||'')); }
     async function postWithRole2(role, payload){
       const res = await fetch(GQL_ENDPOINT, {
         method: 'POST',
@@ -171,12 +179,15 @@ async function loadNhostClient() {
     }
     window.saveOrderNhost = async (order) => {
       try {
-        const obj = { ...order }; if (obj.referrer_email == null || obj.referrer_email === '') delete obj.referrer_email;
+        const obj = { ...order }; if (obj.status == null) obj.status = 'nieuw'; if (obj.referrer_email == null || obj.referrer_email === '') delete obj.referrer_email;
         let payload = { query: mutation, variables: { object: obj } };
         let { res, json, text } = await postWithRole2('public', payload);
-        if ((json && json.errors) && hasRefFieldErr(json.errors)) {
-          if ('referrer_email' in payload.variables.object) {
-            const c = { ...payload.variables.object }; delete c.referrer_email;
+        if (json && json.errors) {
+          const c = { ...payload.variables.object };
+          let changed = false;
+          if (hasFieldErr2(json.errors,'status') && 'status' in c) { delete c.status; changed = true; }
+          if (hasFieldErr2(json.errors,'referrer_email') && 'referrer_email' in c) { delete c.referrer_email; changed = true; }
+          if (changed) {
             payload = { query: mutation, variables: { object: c } };
             ({ res, json, text } = await postWithRole2('public', payload));
           }
@@ -186,9 +197,12 @@ async function loadNhostClient() {
           const notFound = Array.isArray(errs) && errs.some(e => /not found in type:\s*'mutation_root'/i.test(e?.message || ''));
           if (notFound) {
             ({ res, json, text } = await postWithRole2('anonymous', payload));
-            if ((json && json.errors) && hasRefFieldErr(json.errors)) {
-              if ('referrer_email' in payload.variables.object) {
-                const c2 = { ...payload.variables.object }; delete c2.referrer_email;
+            if (json && json.errors) {
+              const c2 = { ...payload.variables.object };
+              let changed2 = false;
+              if (hasFieldErr2(json.errors,'status') && 'status' in c2) { delete c2.status; changed2 = true; }
+              if (hasFieldErr2(json.errors,'referrer_email') && 'referrer_email' in c2) { delete c2.referrer_email; changed2 = true; }
+              if (changed2) {
                 payload = { query: mutation, variables: { object: c2 } };
                 ({ res, json, text } = await postWithRole2('anonymous', payload));
               }
@@ -218,10 +232,16 @@ async function loadNhostClient() {
       if (!window.nhost) return { ok: false, error: 'Client missing' };
   const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id order_no }\n}`;
       const obj = { ...order }; if (obj.referrer_email == null || obj.referrer_email === '') delete obj.referrer_email;
+      if (obj.status == null) obj.status = 'nieuw';
       let { data, error } = await window.nhost.graphql.request(mutation, { object: obj });
-      if (error && /field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(String(error?.message||''))) {
-        delete obj.referrer_email;
-        ({ data, error } = await window.nhost.graphql.request(mutation, { object: obj }));
+      if (error) {
+        const msg = String(error?.message||'');
+        let changed = false;
+        if (/field\s+'status'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(msg) && 'status' in obj) { delete obj.status; changed = true; }
+        if (/field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(msg) && 'referrer_email' in obj) { delete obj.referrer_email; changed = true; }
+        if (changed) {
+          ({ data, error } = await window.nhost.graphql.request(mutation, { object: obj }));
+        }
       }
       if (error) {
         console.warn('[nhost] order insert error', error);

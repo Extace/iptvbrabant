@@ -354,8 +354,9 @@ function renderOrders(list, supportsStatus) {
 	if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
 	c.innerHTML = list.map(o => {
 		const orderNo = o.order_no != null ? formatOrderNo(o.order_no) : '';
+		const statusClass = supportsStatus && o.status ? ` status-${o.status}` : '';
 		return `
-		<div class="order-card" data-id="${o.id}">
+		<div class="order-card${statusClass}" data-id="${o.id}">
 			<h3>${orderNo || '(zonder nummer)'}</h3>
 				${supportsStatus && o.status ? `<div class="status-corner">${statusBadge(o.status)}</div>` : ''}
 			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>

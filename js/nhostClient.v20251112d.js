@@ -26,6 +26,7 @@ async function loadNhostClient() {
 }
 
 (async () => {
+  console.info('[nhost] client build tag', '20251112c');
   // On your production domain behind Cloudflare, skip CDN module imports to avoid noisy CORS/MIME errors
   const FORCE_FALLBACK = (() => {
     try {
@@ -41,15 +42,27 @@ async function loadNhostClient() {
 
   if (FORCE_FALLBACK) {
     console.warn('[nhost] Skipping CDN imports on this domain; using direct GraphQL fallback.');
-    const endpointBase = (typeof window !== 'undefined' && window.NHOST_PROXY_URL_BASE) ? window.NHOST_PROXY_URL_BASE : `https://${NHOST_SUBDOMAIN}.nhost.run`;
-    const GQL_ENDPOINT = `${endpointBase}/v1/graphql`;
-    console.info('[nhost] GraphQL endpoint (fallback):', GQL_ENDPOINT, 'from origin', location.origin);
+    // New Nhost public endpoint pattern uses service + region: <sub>.graphql.<region>.nhost.run
+    // Force DIRECT Nhost in production; ignore any proxy to avoid cached/stale worker issues.
+    let endpointBase = `https://${NHOST_SUBDOMAIN}.graphql.${NHOST_REGION}.nhost.run`;
+    try {
+      if (typeof window !== 'undefined' && window.NHOST_PROXY_URL_BASE) {
+        console.warn('[nhost] Proxy URL present but ignored on production; using direct Nhost endpoint.');
+      }
+    } catch(_) {}
+    // GraphQL lives on /v1 (not /v1/graphql) for the service endpoint
+    const GQL_ENDPOINT = `${endpointBase}/v1`;
+  console.info('[nhost] GraphQL endpoint (fallback):', GQL_ENDPOINT, 'from origin', location.origin);
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
     window.saveOrderNhost = async (order) => {
       try {
         const res = await fetch(GQL_ENDPOINT, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            // Be explicit: ensure Hasura treats this as an anonymous call
+            'x-hasura-role': 'anonymous'
+          },
           body: JSON.stringify({ query: mutation, variables: { object: order } })
         });
         const text = await res.text();
@@ -73,16 +86,24 @@ async function loadNhostClient() {
   const NhostClient = await loadNhostClient();
   if (!NhostClient) {
     console.warn('[nhost] All CDN imports failed; enabling direct GraphQL fallback (anonymous).');
-    // Direct GraphQL endpoint pattern (Nhost v2): https://<subdomain>.nhost.run/v1/graphql
-    const endpointBase2 = (typeof window !== 'undefined' && window.NHOST_PROXY_URL_BASE) ? window.NHOST_PROXY_URL_BASE : `https://${NHOST_SUBDOMAIN}.nhost.run`;
-    const GQL_ENDPOINT = `${endpointBase2}/v1/graphql`;
-    console.info('[nhost] GraphQL endpoint (fallback after import fail):', GQL_ENDPOINT, 'from origin', location.origin);
+    // Direct GraphQL endpoint pattern (current): https://<sub>.graphql.<region>.nhost.run/v1
+    let endpointBase2 = `https://${NHOST_SUBDOMAIN}.graphql.${NHOST_REGION}.nhost.run`;
+    try {
+      if (typeof window !== 'undefined' && window.NHOST_PROXY_URL_BASE) {
+        console.warn('[nhost] Proxy URL present but ignored on production; using direct Nhost endpoint.');
+      }
+    } catch(_) {}
+    const GQL_ENDPOINT = `${endpointBase2}/v1`;
+  console.info('[nhost] GraphQL endpoint (fallback after import fail):', GQL_ENDPOINT, 'from origin', location.origin);
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
     window.saveOrderNhost = async (order) => {
       try {
         const res = await fetch(GQL_ENDPOINT, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' }, // no admin secret for security
+          headers: {
+            'Content-Type': 'application/json', // no admin secret for security
+            'x-hasura-role': 'anonymous'
+          },
           body: JSON.stringify({ query: mutation, variables: { object: order } })
         });
         const text = await res.text();

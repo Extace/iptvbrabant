@@ -26,7 +26,7 @@ async function loadNhostClient() {
 }
 
 (async () => {
-  console.info('[nhost] client build tag', '20251112e');
+  console.info('[nhost] client build tag', '20251112f');
   // Simplified: always use direct GraphQL fallback (works for both prod and dev)
   const FORCE_FALLBACK = true;
 
@@ -64,20 +64,29 @@ async function loadNhostClient() {
       }
     })();
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+    async function postWithRole(role, payload){
+      const res = await fetch(GQL_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-hasura-role': role },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let json = null; try { json = JSON.parse(text); } catch {}
+      return { res, json, text };
+    }
     window.saveOrderNhost = async (order) => {
       try {
-        const res = await fetch(GQL_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // Be explicit: ensure Hasura treats this as an anonymous call
-            'x-hasura-role': 'anonymous'
-          },
-          body: JSON.stringify({ query: mutation, variables: { object: order } })
-        });
-        const text = await res.text();
-        let json = null;
-        try { json = JSON.parse(text); } catch(_) {}
+        const payload = { query: mutation, variables: { object: order } };
+        // First try 'public' (current unauthorized role)
+        let { res, json, text } = await postWithRole('public', payload);
+        if (!res.ok || (json && json.errors)) {
+          const errs = json?.errors || [];
+          const notFound = Array.isArray(errs) && errs.some(e => /not found in type:\s*'mutation_root'/i.test(e?.message || ''));
+          if (notFound) {
+            // Retry with 'anonymous' for environments still using default role
+            ({ res, json, text } = await postWithRole('anonymous', payload));
+          }
+        }
         if (!res.ok || (json && json.errors)) {
           const errOut = json?.errors ? JSON.stringify(json.errors, null, 2) : `status ${res.status}: ${text || '<empty body>'}`;
           console.warn('[nhost] fallback insert failed\n' + errOut);
@@ -127,19 +136,27 @@ async function loadNhostClient() {
       }
     })();
     const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+    async function postWithRole2(role, payload){
+      const res = await fetch(GQL_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-hasura-role': role },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let json = null; try { json = JSON.parse(text); } catch {}
+      return { res, json, text };
+    }
     window.saveOrderNhost = async (order) => {
       try {
-        const res = await fetch(GQL_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json', // no admin secret for security
-            'x-hasura-role': 'anonymous'
-          },
-          body: JSON.stringify({ query: mutation, variables: { object: order } })
-        });
-        const text = await res.text();
-        let json = null;
-        try { json = JSON.parse(text); } catch(_) {}
+        const payload = { query: mutation, variables: { object: order } };
+        let { res, json, text } = await postWithRole2('public', payload);
+        if (!res.ok || (json && json.errors)) {
+          const errs = json?.errors || [];
+          const notFound = Array.isArray(errs) && errs.some(e => /not found in type:\s*'mutation_root'/i.test(e?.message || ''));
+          if (notFound) {
+            ({ res, json, text } = await postWithRole2('anonymous', payload));
+          }
+        }
         if (!res.ok || (json && json.errors)) {
           const errOut = json?.errors ? JSON.stringify(json.errors, null, 2) : `status ${res.status}: ${text || '<empty body>'}`;
           console.warn('[nhost] fallback insert failed\n' + errOut);

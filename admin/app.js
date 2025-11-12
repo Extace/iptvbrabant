@@ -102,21 +102,10 @@ async function gqlRequest(query, variables) {
 
 // GraphQL operations
 const GQL = {
+  // We now supply a fully built where via variable to avoid null _ilike issues
   listOrders: `
-    query ListOrders($status: String, $search: String) {
-      orders(
-        order_by: { created_at: desc }
-        where: {
-          _and: [
-            { status: { _eq: $status } },
-            { _or: [
-              { naam: { _ilike: $search } },
-              { email: { _ilike: $search } },
-              { telefoon: { _ilike: $search } }
-            ]}
-          ]
-        }
-      ) {
+    query ListOrders($where: orders_bool_exp) {
+      orders(order_by: { created_at: desc }, where: $where) {
         id
         klanttype
         naam
@@ -156,7 +145,7 @@ const GQL = {
     }
   `,
   listCustomers: `
-    query ListCustomers($search: String) {
+    query ListCustomers($search: String!) {
       customers(
         order_by: { created_at: desc }
         where: {
@@ -294,20 +283,38 @@ async function openOrderDialog(order) {
 }
 
 async function loadAndRender() {
-  const search = q('#searchInput').value?.trim();
-  const searchVal = search ? `%${search}%` : null;
+  try {
+    const searchRaw = q('#searchInput').value?.trim();
+    const searchPattern = searchRaw ? `%${searchRaw}%` : '%'; // wildcard if empty
 
-  if (state.view === 'orders') {
-    const statusVal = q('#statusFilter').value || null;
-    const data = await gqlRequest(GQL.listOrders, { status: statusVal, search: searchVal });
-    renderOrders(data.orders);
-    q('#ordersContainer').classList.remove('hidden');
-    q('#customersContainer').classList.add('hidden');
-  } else {
-    const data = await gqlRequest(GQL.listCustomers, { search: searchVal });
-    renderCustomers(data.customers);
-    q('#customersContainer').classList.remove('hidden');
-    q('#ordersContainer').classList.add('hidden');
+    if (state.view === 'orders') {
+      const statusVal = q('#statusFilter').value || null;
+      // Build where dynamically to avoid sending null _ilike
+      const where = {};
+      if (statusVal) where.status = { _eq: statusVal };
+      if (searchPattern && searchPattern !== '%') {
+        where._or = [
+          { naam: { _ilike: searchPattern } },
+          { email: { _ilike: searchPattern } },
+          { telefoon: { _ilike: searchPattern } }
+        ];
+      } else {
+        // still include a noop _or to keep query simpler? Not required.
+      }
+      const data = await gqlRequest(GQL.listOrders, { where });
+      renderOrders(data.orders);
+      q('#ordersContainer').classList.remove('hidden');
+      q('#customersContainer').classList.add('hidden');
+    } else {
+      const data = await gqlRequest(GQL.listCustomers, { search: searchPattern });
+      renderCustomers(data.customers);
+      q('#customersContainer').classList.remove('hidden');
+      q('#ordersContainer').classList.add('hidden');
+    }
+  } catch (e) {
+    console.warn('[admin] load failed', e);
+    const target = state.view === 'customers' ? q('#customersContainer') : q('#ordersContainer');
+    target.innerHTML = `<div class="panel" style="color:#b91c1c">Fout bij laden: ${e.message || e}</div>`;
   }
 }
 

@@ -9,7 +9,7 @@
 <body>
   <div class="container">
   <h1>Admin Dashboard</h1>
-  <div class="build">Build v20251112e</div>
+  <div class="build">Build v20251112f</div>
 
     <section id="authSection" class="panel">
       <h2>Inloggen</h2>
@@ -33,6 +33,7 @@
       <div class="toolbar">
         <div>
           <button id="refreshBtn" class="btn">Vernieuwen</button>
+          <button id="newCustomerBtn" class="btn" data-view="customers">Nieuwe klant</button>
           <select id="statusFilter">
             <option value="">Alle statussen</option>
             <option value="nieuw">Nieuw</option>
@@ -49,6 +50,23 @@
       <div id="ordersContainer" class="list"></div>
       <div id="customersContainer" class="list hidden"></div>
 
+      <dialog id="customerDialog">
+        <form method="dialog" class="dialog">
+          <h3>Nieuwe klant</h3>
+          <div class="dlg-body">
+            <div class="form-row"><label for="cNaam">Naam</label><input id="cNaam" type="text" required /></div>
+            <div class="form-row"><label for="cEmail">E-mail</label><input id="cEmail" type="email" /></div>
+            <div class="form-row"><label for="cTel">Telefoon</label><input id="cTel" type="text" /></div>
+            <div class="form-row"><label for="cAdres">Adres</label><textarea id="cAdres" rows="2"></textarea></div>
+            <div class="form-row"><label for="cReferral">Referral code (optioneel)</label><input id="cReferral" type="text" /></div>
+          </div>
+          <div class="dlg-actions">
+            <button value="cancel" class="btn btn-secondary">Annuleren</button>
+            <button id="createCustomerBtn" value="ok" class="btn">Opslaan</button>
+          </div>
+        </form>
+      </dialog>
+
       <dialog id="orderDialog">
         <form method="dialog" class="dialog">
           <h3 id="dlgTitle">Bestelling</h3>
@@ -61,6 +79,6 @@
     </section>
   </div>
 
-  <script src="app.js?v=20251112e" defer></script>
+  <script src="app.js?v=20251112f" defer></script>
 </body>
 </html>

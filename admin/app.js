@@ -180,6 +180,11 @@ const GQL = {
       insert_subscriptions_one(object: $obj) { id start_date end_date }
     }
   `,
+  insertCustomer: `
+    mutation InsertCustomer($obj: customers_insert_input!) {
+      insert_customers_one(object: $obj) { id naam email telefoon created_at }
+    }
+  `,
   updateSubscriptionEnd: `
     mutation UpdateSub($id: uuid!, $end: date!) {
       update_subscriptions_by_pk(pk_columns: { id: $id }, _set: { end_date: $end }) {
@@ -339,6 +344,31 @@ function wireEvents() {
   q('#logoutBtn').onclick = () => {
     state.accessToken = null; state.refreshToken = null; state.user = null; saveTokens();
     hide(q('#appSection')); show(q('#authSection')); setMsg(q('#authMsg'), 'Uitgelogd', '');
+  };
+
+  // New customer flow
+  q('#newCustomerBtn').onclick = () => {
+    // Only usable in Customers view; switch if needed
+    if (state.view !== 'customers') q('#tabCustomers').click();
+    const dlg = q('#customerDialog');
+    q('#cNaam').value=''; q('#cEmail').value=''; q('#cTel').value=''; q('#cAdres').value=''; q('#cReferral').value='';
+    dlg.showModal();
+    q('#createCustomerBtn').onclick = async (ev) => {
+      ev.preventDefault();
+      const naam = q('#cNaam').value.trim();
+      const email = q('#cEmail').value.trim() || null;
+      const telefoon = q('#cTel').value.trim() || null;
+      const adres = q('#cAdres').value.trim() || null;
+      const referral_code = q('#cReferral').value.trim() || null;
+      if (!naam) { alert('Naam is verplicht'); return; }
+      try {
+        await gqlRequest(GQL.insertCustomer, { obj: { naam, email, telefoon, adres, referral_code } });
+        dlg.close();
+        await loadAndRender();
+      } catch (e) {
+        alert('Kon klant niet opslaan: ' + (e.message || e));
+      }
+    };
   };
 
   // Tabs

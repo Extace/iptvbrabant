@@ -430,9 +430,10 @@ placeBtn?.addEventListener('click', async () => {
         adres: formData.get('address') || '',
         producten: summaryText,
         totaal: document.getElementById('total').textContent.replace(/^Totaal:\s*/, ''),
-        opmerkingen: formData.get('comments') || 'Geen',
-        referrer_email: (isNewCustomer ? (formData.get('referred') || '').trim().toLowerCase() : '') || null,
+        opmerkingen: formData.get('comments') || 'Geen'
       };
+      const _ref = isNewCustomer ? (formData.get('referred') || '').trim().toLowerCase() : '';
+      if (_ref) orderRecord.referrer_email = _ref;
       const res = await window.saveOrderNhost(orderRecord);
       if(!res?.ok){
         console.warn('[app] Nhost save failed', res?.error);

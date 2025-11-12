@@ -387,6 +387,59 @@ function wireEvents() {
     };
   };
 
+  // CSV import
+  q('#importBtn').onclick = () => {
+    if (state.view !== 'customers') q('#tabCustomers').click();
+    const fileInput = q('#importInput');
+    fileInput.value = '';
+    fileInput.click();
+  };
+  q('#importInput').addEventListener('change', async (ev) => {
+    const file = ev.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = text.split(/\r?\n/).filter(r => r.trim());
+      if (!rows.length) { alert('Leeg bestand'); return; }
+      const header = rows[0].split(',').map(h => h.trim().toLowerCase());
+      const required = ['naam'];
+      for (const req of required) if (!header.includes(req)) { alert('Vereiste kolom ontbreekt: ' + req); return; }
+      const idx = (col) => header.indexOf(col);
+      const naamIdx = idx('naam');
+      const emailIdx = idx('email');
+      const telIdx = idx('telefoon');
+      const adresIdx = idx('adres');
+      const notesIdx = idx('notes');
+      const extraIdx = idx('extra');
+      let imported = 0, skipped = 0;
+      for (let i=1;i<rows.length;i++) {
+        const parts = rows[i].split(',');
+        const naam = (parts[naamIdx]||'').trim();
+        if (!naam) { skipped++; continue; }
+        const email = emailIdx>-1 ? (parts[emailIdx]||'').trim() || null : null;
+        const telefoon = telIdx>-1 ? (parts[telIdx]||'').trim() || null : null;
+        const adres = adresIdx>-1 ? (parts[adresIdx]||'').trim() || null : null;
+        const notes = notesIdx>-1 ? (parts[notesIdx]||'').trim() || null : null;
+        let extra = {};
+        if (extraIdx>-1) {
+          const raw = (parts[extraIdx]||'').trim();
+          if (raw) { try { extra = JSON.parse(raw); } catch { console.warn('Fout JSON extra op rij', i+1); } }
+        }
+        try {
+          await gqlRequest(GQL.insertCustomer, { obj: { naam, email, telefoon, adres, notes, extra } });
+          imported++;
+        } catch (e) {
+          console.warn('Import rij mislukt', i+1, e.message || e);
+          skipped++;
+        }
+      }
+      alert(`Import klaar. Toegevoegd: ${imported}, overgeslagen: ${skipped}`);
+      await loadAndRender();
+    } catch (e) {
+      alert('Kon CSV niet importeren: ' + (e.message || e));
+    }
+  });
+
   // Tabs
   q('#tabOrders').onclick = () => {
     state.view = 'orders';

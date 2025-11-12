@@ -17,6 +17,8 @@ const state = {
 	supportsOrderStatus: undefined, // detect at runtime if 'status' column is available to this role
 	supportsUpdatedAt: false, // default to false to avoid initial failures when column isn't exposed
 		supportsOrderNo: undefined, // detect if order_no exists
+    // Local overrides for status when the role cannot SELECT the status column
+    statusOverrides: {}, // { [orderId: string]: 'nieuw'|'in_behandeling'|'afgerond' }
 };
 
 function loadTokens() {
@@ -389,11 +391,13 @@ function renderOrders(list, supportsStatus) {
 	if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
 	c.innerHTML = list.map(o => {
 		const orderNo = o.order_no != null ? formatOrderNo(o.order_no) : '';
-		const statusClass = supportsStatus && o.status ? ` status-${o.status}` : '';
+		// Determine status even if GraphQL doesn't expose it: fall back to local override or assume 'nieuw'
+		const effectiveStatus = (supportsStatus && o.status) ? o.status : (state.statusOverrides[o.id] || 'nieuw');
+		const statusClass = effectiveStatus ? ` status-${effectiveStatus}` : '';
 		return `
 		<div class="order-card${statusClass}" data-id="${o.id}">
 			<h3>${orderNo || '(zonder nummer)'}</h3>
-				${supportsStatus && o.status ? `<div class="status-corner">${statusBadge(o.status)}</div>` : ''}
+				${effectiveStatus ? `<div class="status-corner">${statusBadge(effectiveStatus)}</div>` : ''}
 			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>
 			<div class="row"><strong>Telefoon:</strong> ${o.telefoon || '-'}</div>
 			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>
@@ -401,8 +405,8 @@ function renderOrders(list, supportsStatus) {
 			<div class="row"><strong>Klanttype:</strong> ${o.klanttype || '-'}</div>
 			<div class="actions" style="margin-top:8px">
 				<button class="btn" data-act="detail">Details</button>
-				${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>` : ''}
-				${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>` : ''}
+				<button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>
+				<button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>
 			</div>
 		</div>
 	`;
@@ -452,9 +456,10 @@ async function openOrderDialog(order) {
 	let notes = [];
 	try { const n = await gqlRequest(GQL.orderNotes, { orderId: order.id }); notes = n.order_notes; } catch {}
 
+	const effectiveStatus = (state.supportsOrderStatus !== false && order.status) ? order.status : (state.statusOverrides[order.id] || 'nieuw');
 	q('#dlgBody').innerHTML = `
 		<div><strong>Naam:</strong> ${order.naam || '-'} · <strong>Contact:</strong> ${order.telefoon || '-'} · ${order.email || '-'}</div>
-		${state.supportsOrderStatus && order.status ? `<div><strong>Status:</strong> ${statusBadge(order.status)}</div>` : ''}
+		${effectiveStatus ? `<div><strong>Status:</strong> ${statusBadge(effectiveStatus)}</div>` : ''}
 		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
 		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
 		<div class="note-box">
@@ -813,9 +818,10 @@ function wireEvents() {
 		if (act === 'detail') {
 			await openOrderDialog(order);
 		} else if (act === 'status') {
-			if (!state.supportsOrderStatus) return; // buttons shouldn't be present, but guard anyway
 			const next = btn.dataset.next;
 			await gqlRequest(GQL.updateStatus, { id, status: next });
+			// Remember locally so we can render even if role cannot select status
+			state.statusOverrides[id] = next;
 			await loadAndRender();
 		}
 	});

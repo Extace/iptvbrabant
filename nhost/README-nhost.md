@@ -61,3 +61,22 @@ If you previously created a capital `Nhost` folder, remove or rename it to `nhos
 ## Troubleshooting CLI
 The npm package you installed (`nhost@0.1.11`) is NOT the official Nhost CLI (no `bin` field). Until the official CLI is published under a distinct name again, continue with manual setup + SDK.
 
+## New Admin Schema (Customers & Subscriptions)
+Migrations added in this repo:
+- `0005_create_customers.sql`
+- `0006_create_subscriptions.sql`
+- `0007_create_subscription_adjustments.sql`
+- `0008_create_referrals.sql`
+
+After these run on your Nhost Postgres:
+1) In the Hasura console, track these new tables so they appear in GraphQL.
+2) Set permissions:
+   - Role `admin`: full CRUD on all new tables.
+   - Role `public` (or your unauthorized role): no access to these tables (orders insert remains as-is).
+3) Optional: create relationships (Hasura usually infers from FKs):
+   - customers 1:N subscriptions
+   - subscriptions 1:N subscription_adjustments
+   - customers 1:N referrals (referrer), customers 1:N referrals (referred)
+
+The Admin UI’s new “Klanten” tab expects these tables to be tracked and accessible to the `admin` role.
+

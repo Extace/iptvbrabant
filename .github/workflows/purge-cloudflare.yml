@@ -1,0 +1,38 @@
+name: Purge Cloudflare cache after deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'index.html'
+      - 'css/**'
+      - 'js/**'
+      - 'images/**'
+      - '*.html'
+
+jobs:
+  purge:
+    name: Purge Cloudflare Cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # Optional: small delay to let GitHub Pages (or your host) publish the new content
+      - name: Wait for static site publish
+        run: sleep 30
+
+      - name: Purge Cloudflare cache (if secrets are set)
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ZONE_ID" ]; then
+            echo "Cloudflare secrets not set; skipping purge.";
+            exit 0;
+          fi
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo "Purge requested."

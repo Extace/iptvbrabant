@@ -13,6 +13,7 @@ const state = {
   accessToken: null,
   refreshToken: null,
   user: null,
+  view: 'orders', // 'orders' | 'customers'
 };
 
 function loadTokens() {
@@ -148,6 +149,54 @@ const GQL = {
       insert_order_notes_one(object: { order_id: $orderId, note: $note }) { id created_at }
     }
   `,
+  listCustomers: `
+    query ListCustomers($search: String) {
+      customers(
+        order_by: { created_at: desc }
+        where: {
+          _or: [
+            { naam: { _ilike: $search } },
+            { email: { _ilike: $search } },
+            { telefoon: { _ilike: $search } }
+          ]
+        }
+      ) {
+        id
+        naam
+        email
+        telefoon
+        referral_code
+        created_at
+        subscriptions_aggregate { aggregate { max { end_date } } }
+      }
+    }
+  `,
+  activeSubscriptionForCustomer: `
+    query ActiveSub($cid: uuid!) {
+      subscriptions(
+        where: { customer_id: { _eq: $cid } }
+        order_by: { end_date: desc }
+        limit: 1
+      ) { id start_date end_date plan }
+    }
+  `,
+  insertSubscription: `
+    mutation InsertSub($obj: subscriptions_insert_input!) {
+      insert_subscriptions_one(object: $obj) { id start_date end_date }
+    }
+  `,
+  updateSubscriptionEnd: `
+    mutation UpdateSub($id: uuid!, $end: date!) {
+      update_subscriptions_by_pk(pk_columns: { id: $id }, _set: { end_date: $end }) {
+        id end_date
+      }
+    }
+  `,
+  insertAdjustment: `
+    mutation AddAdj($obj: subscription_adjustments_insert_input!) {
+      insert_subscription_adjustments_one(object: $obj) { id }
+    }
+  `,
 };
 
 // UI logic
@@ -173,6 +222,36 @@ function renderOrders(list) {
       </div>
     </div>
   `).join('');
+}
+
+function renderCustomers(list) {
+  const c = q('#customersContainer');
+  if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen klanten gevonden</div>'; return; }
+  const today = new Date();
+  c.innerHTML = list.map(row => {
+    const endMax = row.subscriptions_aggregate?.aggregate?.max?.end_date;
+    const end = endMax ? new Date(endMax) : null;
+    let days = null;
+    if (end) {
+      const ms = end - new Date(today.toDateString());
+      days = Math.ceil(ms / 86400000);
+    }
+    const badge = days==null ? '<span class="sub-meta">geen abonnement</span>'
+      : days >= 60 ? `<span class="badge afgerond">${days}d</span>`
+      : days >= 14 ? `<span class="badge in_behandeling">${days}d</span>`
+      : `<span class="badge nieuw">${days}d</span>`;
+    const endStr = end ? end.toISOString().slice(0,10) : '-';
+    return `
+      <div class="customer-card" data-id="${row.id}" data-end="${endStr}">
+        <h3>${row.naam || '(naam)'} ${badge}</h3>
+        <div class="row"><strong>Contact:</strong> ${row.telefoon || '-'} · ${row.email || '-'}</div>
+        <div class="row"><strong>Einddatum:</strong> ${endStr}</div>
+        <div class="actions">
+          <button class="btn" data-act="referral90">+90 dagen (referral)</button>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 async function openOrderDialog(order) {
@@ -209,11 +288,21 @@ async function openOrderDialog(order) {
 }
 
 async function loadAndRender() {
-  const statusVal = q('#statusFilter').value || null;
   const search = q('#searchInput').value?.trim();
   const searchVal = search ? `%${search}%` : null;
-  const data = await gqlRequest(GQL.listOrders, { status: statusVal, search: searchVal });
-  renderOrders(data.orders);
+
+  if (state.view === 'orders') {
+    const statusVal = q('#statusFilter').value || null;
+    const data = await gqlRequest(GQL.listOrders, { status: statusVal, search: searchVal });
+    renderOrders(data.orders);
+    q('#ordersContainer').classList.remove('hidden');
+    q('#customersContainer').classList.add('hidden');
+  } else {
+    const data = await gqlRequest(GQL.listCustomers, { search: searchVal });
+    renderCustomers(data.customers);
+    q('#customersContainer').classList.remove('hidden');
+    q('#ordersContainer').classList.add('hidden');
+  }
 }
 
 function wireEvents() {
@@ -239,6 +328,22 @@ function wireEvents() {
     hide(q('#appSection')); show(q('#authSection')); setMsg(q('#authMsg'), 'Uitgelogd', '');
   };
 
+  // Tabs
+  q('#tabOrders').onclick = () => {
+    state.view = 'orders';
+    q('#tabOrders').classList.add('active');
+    q('#tabCustomers').classList.remove('active');
+    q('#statusFilter').disabled = false;
+    loadAndRender();
+  };
+  q('#tabCustomers').onclick = () => {
+    state.view = 'customers';
+    q('#tabCustomers').classList.add('active');
+    q('#tabOrders').classList.remove('active');
+    q('#statusFilter').disabled = true; // not used on customers view
+    loadAndRender();
+  };
+
   q('#ordersContainer').addEventListener('click', async (ev) => {
     const btn = ev.target.closest('button[data-act]');
     if (!btn) return;
@@ -258,6 +363,49 @@ function wireEvents() {
       const next = btn.dataset.next;
       await gqlRequest(GQL.updateStatus, { id, status: next });
       await loadAndRender();
+    }
+  });
+
+  q('#customersContainer').addEventListener('click', async (ev) => {
+    const btn = ev.target.closest('button[data-act]');
+    if (!btn) return;
+    const card = ev.target.closest('.customer-card');
+    const customerId = card?.dataset?.id;
+    if (!customerId) return;
+
+    if (btn.dataset.act === 'referral90') {
+      try {
+        // 1) Find latest sub
+        const res = await gqlRequest(GQL.activeSubscriptionForCustomer, { cid: customerId });
+        const sub = (res.subscriptions || [])[0] || null;
+        const today = new Date();
+        const base = sub && sub.end_date ? new Date(sub.end_date) : today;
+        const baseMid = new Date((base > today ? base : today).toDateString());
+        const newEnd = new Date(baseMid.getTime() + 90*86400000);
+        const endStr = newEnd.toISOString().slice(0,10);
+
+        if (!sub) {
+          // Create subscription starting today for +90 days
+          const ins = await gqlRequest(GQL.insertSubscription, {
+            obj: {
+              customer_id: customerId,
+              plan: 'referral',
+              source: 'referral_bonus',
+              start_date: today.toISOString().slice(0,10),
+              end_date: endStr,
+            }
+          });
+          const sid = ins.insert_subscriptions_one.id;
+          await gqlRequest(GQL.insertAdjustment, { obj: { subscription_id: sid, delta_days: 90, reason: 'referral_bonus' } });
+        } else {
+          // Extend existing subscription
+          await gqlRequest(GQL.updateSubscriptionEnd, { id: sub.id, end: endStr });
+          await gqlRequest(GQL.insertAdjustment, { obj: { subscription_id: sub.id, delta_days: 90, reason: 'referral_bonus' } });
+        }
+        await loadAndRender();
+      } catch (e) {
+        alert('Kon referral-bonus niet toepassen: ' + (e.message || e));
+      }
     }
   });
 }

@@ -145,6 +145,7 @@ const GQL = {
 		listOrders: `
 			query ListOrders($where: orders_bool_exp) {
 				orders(order_by: { created_at: desc }, where: $where) {
+						order_no
 					id
 					klanttype
 					naam
@@ -163,6 +164,7 @@ const GQL = {
 		listOrdersNoStatus: `
 			query ListOrders($where: orders_bool_exp) {
 				orders(order_by: { created_at: desc }, where: $where) {
+						order_no
 					id
 					klanttype
 					naam
@@ -180,6 +182,7 @@ const GQL = {
 		listOrdersBasic: `
 			query ListOrders($where: orders_bool_exp) {
 				orders(order_by: { created_at: desc }, where: $where) {
+						order_no
 					id
 					klanttype
 					naam
@@ -289,13 +292,19 @@ function hide(el) { el.classList.add('hidden'); }
 function setMsg(el, text, kind) { el.textContent = text || ''; el.className = `msg ${kind||''}`; }
 
 function statusBadge(status) { return `<span class="badge ${status}">${status}</span>`; }
+function formatOrderNo(n){
+	if (n == null) return '';
+	try { const s = String(parseInt(n,10)); return '#' + s.padStart(5,'0'); } catch { return ''; }
+}
 
 function renderOrders(list, supportsStatus) {
 	const c = q('#ordersContainer');
 	if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
-	c.innerHTML = list.map(o => `
+		c.innerHTML = list.map(o => {
+			const num = o.order_no != null ? `<span class="badge nieuw" style="margin-right:6px">${formatOrderNo(o.order_no)}</span>` : '';
+			return `
 		<div class="order-card" data-id="${o.id}">
-			<h3>${o.naam || '(naam onbekend)'} ${supportsStatus && o.status ? statusBadge(o.status) : ''}</h3>
+				<h3>${num}${o.naam || '(naam onbekend)'} ${supportsStatus && o.status ? statusBadge(o.status) : ''}</h3>
 			<div class="row"><strong>Contact:</strong> ${o.telefoon || '-'} · ${o.email || '-'}</div>
 			<div class="row"><strong>Gemaakt:</strong> ${new Date(o.created_at).toLocaleString()}</div>
 			<div class="row"><strong>Totaal:</strong> ${o.totaal || '-'}</div>
@@ -304,8 +313,8 @@ function renderOrders(list, supportsStatus) {
 				${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>` : ''}
 				${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>` : ''}
 			</div>
-		</div>
-	`).join('');
+			</div>
+		`; }).join('');
 }
 
 function renderCustomers(list) {
@@ -342,7 +351,8 @@ function renderCustomers(list) {
 
 async function openOrderDialog(order) {
 	const dlg = q('#orderDialog');
-	q('#dlgTitle').textContent = `Bestelling ${order.id}`;
+		const num = order.order_no != null ? formatOrderNo(order.order_no) : order.id;
+		q('#dlgTitle').textContent = `Bestelling ${num}`;
 
 	// Fetch notes
 	let notes = [];
@@ -644,17 +654,17 @@ function wireEvents() {
 		let orderRes;
 		try {
 			if (state.supportsOrderStatus === false) {
-				orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
 				state.supportsOrderStatus = false;
 			} else {
-				orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
 				state.supportsOrderStatus = true;
 			}
 		} catch (e) {
 			const msg = e.message || String(e);
 			if (/field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg)) {
 				state.supportsOrderStatus = false;
-				orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
 			} else { throw e; }
 		}
 		const order = orderRes.orders_by_pk;

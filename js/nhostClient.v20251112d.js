@@ -63,7 +63,7 @@ async function loadNhostClient() {
         console.warn('[nhost][debug] introspection error', e);
       }
     })();
-    const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+  const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id order_no }\n}`;
     function hasReferrerFieldError(errs){
       return Array.isArray(errs) && errs.some(e => /field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(e?.message||''));
     }
@@ -113,9 +113,10 @@ async function loadNhostClient() {
           console.warn('[nhost] fallback insert failed\n' + errOut);
           return { ok: false, error: json?.errors || errOut };
         }
-        const id = json?.data?.insert_orders_one?.id;
-        console.log('[nhost] insert success (fallback)', id);
-        return { ok: true, id };
+  const id = json?.data?.insert_orders_one?.id;
+  const order_no = json?.data?.insert_orders_one?.order_no;
+  console.log('[nhost] insert success (fallback)', id, order_no);
+  return { ok: true, id, order_no };
       } catch (e) {
         console.warn('[nhost] network/parse error fallback', e);
         return { ok: false, error: e };
@@ -156,7 +157,7 @@ async function loadNhostClient() {
         console.warn('[nhost][debug] introspection error', e);
       }
     })();
-    const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+  const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id order_no }\n}`;
     function hasRefFieldErr(arr){ return Array.isArray(arr) && arr.some(e => /field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(e?.message||'')); }
     async function postWithRole2(role, payload){
       const res = await fetch(GQL_ENDPOINT, {
@@ -199,9 +200,10 @@ async function loadNhostClient() {
           console.warn('[nhost] fallback insert failed\n' + errOut);
           return { ok: false, error: json?.errors || errOut };
         }
-        const id = json?.data?.insert_orders_one?.id;
-        console.log('[nhost] insert success (fallback)', id);
-        return { ok: true, id };
+  const id = json?.data?.insert_orders_one?.id;
+  const order_no = json?.data?.insert_orders_one?.order_no;
+  console.log('[nhost] insert success (fallback)', id, order_no);
+  return { ok: true, id, order_no };
       } catch (e) {
         console.warn('[nhost] network/parse error fallback', e);
         return { ok: false, error: e };
@@ -214,7 +216,7 @@ async function loadNhostClient() {
   window.saveOrderNhost = async function(order) {
     try {
       if (!window.nhost) return { ok: false, error: 'Client missing' };
-      const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id }\n}`;
+  const mutation = `mutation InsertOrder($object: orders_insert_input!) {\n  insert_orders_one(object: $object) { id order_no }\n}`;
       const obj = { ...order }; if (obj.referrer_email == null || obj.referrer_email === '') delete obj.referrer_email;
       let { data, error } = await window.nhost.graphql.request(mutation, { object: obj });
       if (error && /field\s+'referrer_email'\s+not\s+found\s+in\s+type:\s*'orders_insert_input'/i.test(String(error?.message||''))) {
@@ -225,9 +227,10 @@ async function loadNhostClient() {
         console.warn('[nhost] order insert error', error);
         return { ok: false, error };
       }
-      const id = data?.insert_orders_one?.id;
-      console.log('[nhost] insert success (sdk)', id);
-      return { ok: true, id };
+  const id = data?.insert_orders_one?.id;
+  const order_no = data?.insert_orders_one?.order_no;
+  console.log('[nhost] insert success (sdk)', id, order_no);
+  return { ok: true, id, order_no };
     } catch (e) {
       console.warn('[nhost] unexpected save error', e);
       return { ok: false, error: e };

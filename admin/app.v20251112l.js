@@ -16,6 +16,7 @@ const state = {
 	view: 'orders', // 'orders' | 'customers'
 	supportsOrderStatus: undefined, // detect at runtime if 'status' column is available to this role
 	supportsUpdatedAt: undefined, // detect if updated_at column exists for role
+		supportsOrderNo: undefined, // detect if order_no exists
 };
 
 function loadTokens() {
@@ -196,6 +197,57 @@ const GQL = {
 				}
 			}
 		`,
+			listOrdersNoNumber: `
+				query ListOrders($where: orders_bool_exp) {
+					orders(order_by: { created_at: desc }, where: $where) {
+						id
+						klanttype
+						naam
+						telefoon
+						email
+						adres
+						producten
+						totaal
+						status
+						opmerkingen
+						created_at
+						updated_at
+					}
+				}
+			`,
+			listOrdersNoStatusNoNumber: `
+				query ListOrders($where: orders_bool_exp) {
+					orders(order_by: { created_at: desc }, where: $where) {
+						id
+						klanttype
+						naam
+						telefoon
+						email
+						adres
+						producten
+						totaal
+						opmerkingen
+						created_at
+						updated_at
+					}
+				}
+			`,
+			listOrdersBasicNoNumber: `
+				query ListOrders($where: orders_bool_exp) {
+					orders(order_by: { created_at: desc }, where: $where) {
+						id
+						klanttype
+						naam
+						telefoon
+						email
+						adres
+						producten
+						totaal
+						opmerkingen
+						created_at
+					}
+				}
+			`,
 	orderNotes: `
 		query Notes($orderId: uuid!) {
 			order_notes(where: { order_id: { _eq: $orderId } }, order_by: { created_at: desc }) {
@@ -408,42 +460,58 @@ async function loadAndRender() {
 					// Decide which query path to attempt first based on prior detections
 					const tryStatus = state.supportsOrderStatus !== false;
 					const tryUpdated = state.supportsUpdatedAt !== false;
-					const attemptFull = tryStatus && tryUpdated;
+					const tryNumber = state.supportsOrderNo !== false;
+					const attemptFull = tryStatus && tryUpdated && tryNumber;
 
 					let usedVariant = 'full';
 					try {
-						if (attemptFull) {
-							const d = await gqlRequest(GQL.listOrders, { where });
+								if (attemptFull) {
+									const d = await gqlRequest(GQL.listOrders, { where });
 							state.supportsOrderStatus = true; state.supportsUpdatedAt = true;
-							data = d; usedVariant = 'full';
-						} else if (tryUpdated && !tryStatus) {
-							const d = await gqlRequest(GQL.listOrdersNoStatus, { where });
-							state.supportsUpdatedAt = true; data = d; usedVariant = 'noStatus';
+									state.supportsOrderNo = true;
+									data = d; usedVariant = 'full';
+								} else if (tryUpdated && !tryStatus && tryNumber) {
+									const d = await gqlRequest(GQL.listOrdersNoStatus, { where });
+									state.supportsUpdatedAt = true; state.supportsOrderNo = true; data = d; usedVariant = 'noStatus';
+								} else if (tryUpdated && !tryStatus && !tryNumber) {
+									const d = await gqlRequest(GQL.listOrdersNoStatusNoNumber, { where });
+									state.supportsUpdatedAt = true; state.supportsOrderNo = false; data = d; usedVariant = 'noStatusNoNum';
 						} else if (!tryUpdated && tryStatus) {
 							// unlikely path (status exists but updated_at missing)
-							const d = await gqlRequest(GQL.listOrders, { where }); // will error on updated_at -> caught below
-							data = d; usedVariant = 'full';
+									const d = tryNumber ? await gqlRequest(GQL.listOrders, { where }) : await gqlRequest(GQL.listOrdersNoNumber, { where }); // may error -> caught
+									data = d; usedVariant = tryNumber ? 'full' : 'fullNoNum';
 						} else {
-							const d = await gqlRequest(GQL.listOrdersBasic, { where });
-							data = d; usedVariant = 'basic';
+									const d = tryNumber ? await gqlRequest(GQL.listOrdersBasic, { where }) : await gqlRequest(GQL.listOrdersBasicNoNumber, { where });
+									data = d; usedVariant = tryNumber ? 'basic' : 'basicNoNum';
 						}
 					} catch (e) {
 						const msg = e.message || String(e);
 						const missingStatus = /field ['\"]?status['\"]? not found/i.test(msg);
 						const missingUpdated = /field ['\"]?updated_at['\"]? not found/i.test(msg);
-						if (missingStatus || missingUpdated) {
+								const missingOrderNo = /field ['\"]?order_no['\"]? not found/i.test(msg);
+								if (missingStatus || missingUpdated || missingOrderNo) {
 							if (missingStatus) state.supportsOrderStatus = false;
 							if (missingUpdated) state.supportsUpdatedAt = false;
+									if (missingOrderNo) state.supportsOrderNo = false;
 							// Retry with appropriate reduced query
 							try {
 								let d;
-								if (state.supportsOrderStatus === false && state.supportsUpdatedAt === false) {
-									d = await gqlRequest(GQL.listOrdersBasic, { where }); usedVariant = 'basic';
-								} else if (state.supportsOrderStatus === false) {
-									d = await gqlRequest(GQL.listOrdersNoStatus, { where }); usedVariant = 'noStatus';
-								} else { // only updated_at missing
-									d = await gqlRequest(GQL.listOrdersBasic, { where }); usedVariant = 'basic';
-								}
+										if (state.supportsOrderStatus === false && state.supportsUpdatedAt === false) {
+											d = (state.supportsOrderNo === false)
+												? await gqlRequest(GQL.listOrdersBasicNoNumber, { where })
+												: await gqlRequest(GQL.listOrdersBasic, { where });
+											usedVariant = (state.supportsOrderNo === false) ? 'basicNoNum' : 'basic';
+										} else if (state.supportsOrderStatus === false) {
+											d = (state.supportsOrderNo === false)
+												? await gqlRequest(GQL.listOrdersNoStatusNoNumber, { where })
+												: await gqlRequest(GQL.listOrdersNoStatus, { where });
+											usedVariant = (state.supportsOrderNo === false) ? 'noStatusNoNum' : 'noStatus';
+										} else { // only updated_at missing
+											d = (state.supportsOrderNo === false)
+												? await gqlRequest(GQL.listOrdersBasicNoNumber, { where })
+												: await gqlRequest(GQL.listOrdersBasic, { where });
+											usedVariant = (state.supportsOrderNo === false) ? 'basicNoNum' : 'basic';
+										}
 								data = d;
 							} catch (e2) {
 								throw e2; // bubble if fallback also fails
@@ -468,12 +536,14 @@ async function loadAndRender() {
 			const target = state.view === 'customers' ? q('#customersContainer') : q('#ordersContainer');
 			const msg = e.message || String(e);
 			// If status field caused the error and we haven't tried fallback yet, force fallback path
-				const missingStatus = msg.includes("field 'status' not found in type: 'orders'") || /field ['\"]?status['\"]? not found/i.test(msg);
-				const missingUpdated = msg.includes("field 'updated_at' not found in type: 'orders'") || /field ['\"]?updated_at['\"]? not found/i.test(msg);
-				if (state.view === 'orders' && (missingStatus || missingUpdated)) {
+					const missingStatus = msg.includes("field 'status' not found in type: 'orders'") || /field ['\"]?status['\"]? not found/i.test(msg);
+					const missingUpdated = msg.includes("field 'updated_at' not found in type: 'orders'") || /field ['\"]?updated_at['\"]? not found/i.test(msg);
+					const missingOrderNo = msg.includes("field 'order_no' not found in type: 'orders'") || /field ['\"]?order_no['\"]? not found/i.test(msg);
+					if (state.view === 'orders' && (missingStatus || missingUpdated || missingOrderNo)) {
 				try {
 							if (missingStatus) state.supportsOrderStatus = false;
 							if (missingUpdated) state.supportsUpdatedAt = false;
+								if (missingOrderNo) state.supportsOrderNo = false;
 					const searchRaw = q('#searchInput').value?.trim();
 					const searchPattern = searchRaw ? `%${searchRaw}%` : '%';
 					const statusVal = q('#statusFilter').value || null;
@@ -486,21 +556,29 @@ async function loadAndRender() {
 							{ telefoon: { _ilike: searchPattern } }
 						];
 					}
-							let d;
-							if (state.supportsOrderStatus === false && state.supportsUpdatedAt === false) {
-								d = await gqlRequest(GQL.listOrdersBasic, { where });
-								renderOrders(d.orders, false);
-							} else if (state.supportsOrderStatus === false) {
-								d = await gqlRequest(GQL.listOrdersNoStatus, { where });
-								renderOrders(d.orders, false);
-							} else if (state.supportsUpdatedAt === false) {
-								d = await gqlRequest(GQL.listOrdersBasic, { where });
-								renderOrders(d.orders, true); // status still available
-							} else {
-								// fallback generic
-								d = await gqlRequest(GQL.listOrdersBasic, { where });
-								renderOrders(d.orders, false);
-							}
+								let d;
+								if (state.supportsOrderStatus === false && state.supportsUpdatedAt === false) {
+									d = (state.supportsOrderNo === false)
+										? await gqlRequest(GQL.listOrdersBasicNoNumber, { where })
+										: await gqlRequest(GQL.listOrdersBasic, { where });
+									renderOrders(d.orders, false);
+								} else if (state.supportsOrderStatus === false) {
+									d = (state.supportsOrderNo === false)
+										? await gqlRequest(GQL.listOrdersNoStatusNoNumber, { where })
+										: await gqlRequest(GQL.listOrdersNoStatus, { where });
+									renderOrders(d.orders, false);
+								} else if (state.supportsUpdatedAt === false) {
+									d = (state.supportsOrderNo === false)
+										? await gqlRequest(GQL.listOrdersBasicNoNumber, { where })
+										: await gqlRequest(GQL.listOrdersBasic, { where });
+									renderOrders(d.orders, true); // status still available
+								} else {
+									// fallback generic
+									d = (state.supportsOrderNo === false)
+										? await gqlRequest(GQL.listOrdersNoNumber, { where })
+										: await gqlRequest(GQL.listOrdersBasic, { where });
+									renderOrders(d.orders, state.supportsOrderStatus !== false);
+								}
 					return; // successful fallback
 				} catch (e2) {
 					console.warn('[admin] fallback after missing status failed', e2);
@@ -652,22 +730,41 @@ function wireEvents() {
 		const id = card?.dataset?.id;
 		if (!id) return;
 
-		// fetch the current order to ensure we have up-to-date fields
+			// fetch the current order to ensure we have up-to-date fields
 		let orderRes;
 		try {
-			if (state.supportsOrderStatus === false) {
+				if (state.supportsOrderStatus === false) {
+					if (state.supportsOrderNo === false) {
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+					} else {
 						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
-				state.supportsOrderStatus = false;
-			} else {
+					}
+					state.supportsOrderStatus = false;
+				} else {
+					if (state.supportsOrderNo === false) {
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
+					} else {
 						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
-				state.supportsOrderStatus = true;
-			}
+					}
+					state.supportsOrderStatus = true;
+				}
 		} catch (e) {
 			const msg = e.message || String(e);
-			if (/field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg)) {
-				state.supportsOrderStatus = false;
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
-			} else { throw e; }
+				const noStatus = /field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg);
+				const noNumber = /field '\\s*order_no\\s*' not found in type:\\s*'orders'/i.test(msg);
+				if (noStatus || noNumber) {
+					if (noStatus) state.supportsOrderStatus = false;
+					if (noNumber) state.supportsOrderNo = false;
+					// retry with reduced projection
+					const base = state.supportsOrderStatus === false
+						? (state.supportsOrderNo === false
+								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`
+								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`)
+						: (state.supportsOrderNo === false
+								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`
+								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`);
+					orderRes = await gqlRequest(base, { id });
+				} else { throw e; }
 		}
 		const order = orderRes.orders_by_pk;
 		if (!order) return;

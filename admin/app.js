@@ -66,7 +66,7 @@ async function refresh() {
   const data = await authRequest('/token', { refreshToken: state.refreshToken });
   const session = data.session || data;
   state.accessToken = session.accessToken || session.access_token;
-  state.refreshToken = session.refreshToken || state.refreshToken;
+  state.refreshToken = session.refreshToken || session.refresh_token || state.refreshToken;
   saveTokens();
 }
 
@@ -82,22 +82,59 @@ async function gqlRequest(query, variables) {
     body: JSON.stringify({ query, variables }),
   });
 
-  let res = await doFetch();
-  if (res.status === 401) {
-    // try refresh once
-    await refresh();
-    res = await doFetch();
-  }
-  const text = await res.text();
-  let json = null; try { json = JSON.parse(text); } catch {}
-  if (!res.ok || json?.errors) {
-    // Helpful debug hint if the role lacks permissions and fields vanish from schema
-    if (json?.errors?.[0]?.message?.includes("not found in type: 'query_root'")) {
-      console.warn('[admin] Query field missing for role. Check user allowed roles/default_role and Hasura permissions.');
+  const isJwtExpiredErrors = (errs) => Array.isArray(errs) && errs.some(e =>
+    /invalid-jwt/i.test(e?.extensions?.code || '') || /JWTExpired/i.test(e?.message || '') || /Could not verify JWT/i.test(e?.message || '')
+  );
+
+  let attemptedRefresh = false;
+  // We'll allow at most one refresh cycle per request
+  while (true) {
+    let res = await doFetch();
+    const text = await res.text();
+    let json = null; try { json = JSON.parse(text); } catch {}
+
+    if (res.status === 401) {
+      if (attemptedRefresh) {
+        // second 401, give up
+        throw new Error('Niet geautoriseerd (401)');
+      }
+      try {
+        await refresh();
+        attemptedRefresh = true;
+        continue; // retry
+      } catch (e) {
+        // refresh failed -> clear session and bubble up
+        console.warn('[admin] refresh failed after 401', e);
+        state.accessToken = null; state.refreshToken = null; state.user = null; saveTokens();
+        throw new Error('Sessiesleutel verlopen. Log opnieuw in.');
+      }
     }
-    throw new Error(json?.errors ? JSON.stringify(json.errors) : `GQL ${res.status}: ${text}`);
+
+    if (!res.ok) {
+      // If non-OK and didn't trigger 401 logic, just throw
+      throw new Error(`GQL ${res.status}: ${text}`);
+    }
+
+    if (json?.errors) {
+      if (isJwtExpiredErrors(json.errors) && !attemptedRefresh && state.refreshToken) {
+        try {
+          await refresh();
+          attemptedRefresh = true;
+          continue; // retry with new token
+        } catch (e) {
+          console.warn('[admin] refresh failed after invalid-jwt error', e);
+          state.accessToken = null; state.refreshToken = null; state.user = null; saveTokens();
+          throw new Error('Sessiesleutel verlopen. Log opnieuw in.');
+        }
+      }
+      // Helpful debug hint if the role lacks permissions and fields vanish from schema
+      if (json.errors?.[0]?.message?.includes("not found in type: 'query_root'")) {
+        console.warn('[admin] Query field missing for role. Check user allowed roles/default_role and Hasura permissions.');
+      }
+      throw new Error(JSON.stringify(json.errors));
+    }
+    return json.data;
   }
-  return json.data;
 }
 
 // GraphQL operations
@@ -327,7 +364,14 @@ async function loadAndRender() {
   } catch (e) {
     console.warn('[admin] load failed', e);
     const target = state.view === 'customers' ? q('#customersContainer') : q('#ordersContainer');
-    target.innerHTML = `<div class="panel" style="color:#b91c1c">Fout bij laden: ${e.message || e}</div>`;
+    const msg = e.message || String(e);
+    target.innerHTML = `<div class="panel" style="color:#b91c1c">Fout bij laden: ${msg}</div>`;
+    if (/Sessiesleutel verlopen|invalid-jwt|JWTExpired|Niet geautoriseerd/i.test(msg)) {
+      // force logout UI if tokens are no longer valid
+      state.accessToken = null; state.refreshToken = null; state.user = null; saveTokens();
+      hide(q('#appSection')); show(q('#authSection'));
+      setMsg(q('#authMsg'), 'Sessie verlopen. Log opnieuw in.', '');
+    }
   }
 }
 

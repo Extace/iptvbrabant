@@ -300,21 +300,23 @@ function formatOrderNo(n){
 function renderOrders(list, supportsStatus) {
 	const c = q('#ordersContainer');
 	if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
-		c.innerHTML = list.map(o => {
-			const num = o.order_no != null ? `<span class="badge nieuw" style="margin-right:6px">${formatOrderNo(o.order_no)}</span>` : '';
-			return `
+	c.innerHTML = list.map(o => {
+		const orderNo = o.order_no != null ? formatOrderNo(o.order_no) : '';
+		return `
 		<div class="order-card" data-id="${o.id}">
-				<h3>${num}${o.naam || '(naam onbekend)'} ${supportsStatus && o.status ? statusBadge(o.status) : ''}</h3>
-			<div class="row"><strong>Contact:</strong> ${o.telefoon || '-'} · ${o.email || '-'}</div>
-			<div class="row"><strong>Gemaakt:</strong> ${new Date(o.created_at).toLocaleString()}</div>
-			<div class="row"><strong>Totaal:</strong> ${o.totaal || '-'}</div>
-			<div class="actions">
+			<h3>${orderNo || '(zonder nummer)'}</h3>
+			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>
+			<div class="row"><strong>Telefoon:</strong> ${o.telefoon || '-'}</div>
+			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>
+			<div class="row"><strong>Datum:</strong> ${new Date(o.created_at).toLocaleString()}</div>
+			<div class="row"><strong>Klanttype:</strong> ${o.klanttype || '-'}</div>
+			<div class="actions" style="margin-top:8px">
 				<button class="btn" data-act="detail">Details</button>
 				${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>` : ''}
 				${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>` : ''}
 			</div>
-			</div>
-		`; }).join('');
+		</div>
+	`; }).join('');
 }
 
 function renderCustomers(list) {

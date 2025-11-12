@@ -35,6 +35,11 @@ input:focus, select:focus, textarea:focus { outline:2px solid #3b82f6; border-co
 .order-card.status-afgerond { background:#dcfce7; }
 .order-card h3 { margin:0; font-size:1rem; }
 .order-card .status-corner { position:absolute; top:10px; right:10px; }
+.status-select { appearance:none; -webkit-appearance:none; border:none; cursor:pointer; font-weight:600; font-size:.7rem; padding:2px 8px; border-radius:999px; box-shadow:0 0 0 1px rgba(0,0,0,.06) inset; }
+.status-select:focus { outline:2px solid #3b82f6; }
+.status-select.status-nieuw { background:#fbbf24; color:#1e293b; }
+.status-select.status-in_behandeling { background:#3b82f6; color:#fff; }
+.status-select.status-afgerond { background:#10b981; color:#fff; }
 .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.7rem; font-weight:600; letter-spacing:.5px; }
 .badge.nieuw { background:#fbbf24; color:#1e293b; }
 .badge.in_behandeling { background:#3b82f6; color:#fff; }

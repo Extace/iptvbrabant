@@ -303,6 +303,14 @@ const GQL = {
 			}
 		}
 	`,
+	updateStatusMin: `
+		mutation UpdateStatusMin($id: uuid!, $status: String!) {
+			update_orders_by_pk(pk_columns: { id: $id }, _set: { status: $status }) {
+				id
+				status
+			}
+		}
+	`,
 	addNote: `
 		mutation AddNote($orderId: uuid!, $note: String!) {
 			insert_order_notes_one(object: { order_id: $orderId, note: $note }) { id created_at }
@@ -397,7 +405,7 @@ function renderOrders(list, supportsStatus) {
 		return `
 		<div class="order-card${statusClass}" data-id="${o.id}">
 			<h3>${orderNo || '(zonder nummer)'}</h3>
-				${effectiveStatus ? `<div class="status-corner">${statusBadge(effectiveStatus)}</div>` : ''}
+			${effectiveStatus ? `<div class="status-corner"><select class="status-select status-${effectiveStatus}" data-order-id="${o.id}">${['nieuw','in_behandeling','afgerond'].map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>` : ''}
 			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>
 			<div class="row"><strong>Telefoon:</strong> ${o.telefoon || '-'}</div>
 			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>
@@ -405,8 +413,6 @@ function renderOrders(list, supportsStatus) {
 			<div class="row"><strong>Klanttype:</strong> ${o.klanttype || '-'}</div>
 			<div class="actions" style="margin-top:8px">
 				<button class="btn" data-act="detail">Details</button>
-				<button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>
-				<button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>
 			</div>
 		</div>
 	`;
@@ -459,7 +465,7 @@ async function openOrderDialog(order) {
 	const effectiveStatus = (state.supportsOrderStatus !== false && order.status) ? order.status : (state.statusOverrides[order.id] || 'nieuw');
 	q('#dlgBody').innerHTML = `
 		<div><strong>Naam:</strong> ${order.naam || '-'} · <strong>Contact:</strong> ${order.telefoon || '-'} · ${order.email || '-'}</div>
-		${effectiveStatus ? `<div><strong>Status:</strong> ${statusBadge(effectiveStatus)}</div>` : ''}
+		<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${['nieuw','in_behandeling','afgerond'].map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
 		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
 		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
 		<div class="note-box">
@@ -472,6 +478,22 @@ async function openOrderDialog(order) {
 	`;
 
 	dlg.showModal();
+
+	// Dialog status change
+	const sel = q('#dlgStatusSelect');
+	sel?.addEventListener('change', async (ev) => {
+		const next = ev.target.value;
+		try {
+			await gqlRequest(GQL.updateStatus, { id: order.id, status: next });
+		} catch (e) {
+			const msg = e.message || String(e);
+			if (/field ['\"]?updated_at['\"]? not found/i.test(msg)) {
+				await gqlRequest(GQL.updateStatusMin, { id: order.id, status: next });
+			} else { alert('Kon status niet wijzigen: ' + msg); }
+		}
+		state.statusOverrides[order.id] = next;
+		await loadAndRender();
+	});
 
 	q('#addNoteBtn').onclick = async () => {
 		const note = q('#noteInput').value.trim();
@@ -817,13 +839,25 @@ function wireEvents() {
 		const act = btn.dataset.act;
 		if (act === 'detail') {
 			await openOrderDialog(order);
-		} else if (act === 'status') {
-			const next = btn.dataset.next;
-			await gqlRequest(GQL.updateStatus, { id, status: next });
-			// Remember locally so we can render even if role cannot select status
-			state.statusOverrides[id] = next;
-			await loadAndRender();
 		}
+	});
+
+	// Handle status dropdown changes on cards
+	q('#ordersContainer').addEventListener('change', async (ev) => {
+		const sel = ev.target.closest('select.status-select');
+		if (!sel) return;
+		const id = sel.getAttribute('data-order-id');
+		const next = sel.value;
+		try {
+			await gqlRequest(GQL.updateStatus, { id, status: next });
+		} catch (e) {
+			const msg = e.message || String(e);
+			if (/field ['\"]?updated_at['\"]? not found/i.test(msg)) {
+				await gqlRequest(GQL.updateStatusMin, { id, status: next });
+			} else { alert('Kon status niet wijzigen: ' + msg); }
+		}
+		state.statusOverrides[id] = next;
+		await loadAndRender();
 	});
 }
 

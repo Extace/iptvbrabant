@@ -359,8 +359,10 @@ function wireEvents() {
     // Only usable in Customers view; switch if needed
     if (state.view !== 'customers') q('#tabCustomers').click();
     const dlg = q('#customerDialog');
-  q('#cNaam').value=''; q('#cEmail').value=''; q('#cTel').value=''; q('#cAdres').value=''; q('#cReferral').value=''; q('#cNotes').value=''; q('#cExtra').value='';
+    q('#cNaam').value=''; q('#cEmail').value=''; q('#cTel').value=''; q('#cAdres').value=''; q('#cReferral').value=''; q('#cNotes').value=''; q('#cExtra').value='';
+    dlg.querySelector('h3').textContent = 'Nieuwe klant';
     dlg.showModal();
+    q('#cancelCustomerBtn').onclick = (e) => { e.preventDefault(); dlg.close(); };
     q('#createCustomerBtn').onclick = async (ev) => {
       ev.preventDefault();
       const naam = q('#cNaam').value.trim();

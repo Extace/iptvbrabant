@@ -15,7 +15,7 @@ const state = {
 	user: null,
 	view: 'orders', // 'orders' | 'customers'
 	supportsOrderStatus: undefined, // detect at runtime if 'status' column is available to this role
-	supportsUpdatedAt: undefined, // detect if updated_at column exists for role
+	supportsUpdatedAt: false, // default to false to avoid initial failures when column isn't exposed
 		supportsOrderNo: undefined, // detect if order_no exists
 };
 

@@ -54,4 +54,5 @@ input:focus, select:focus, textarea:focus { outline:2px solid #3b82f6; border-co
 .notes-list { display:flex; flex-direction:column; gap:8px; max-height:240px; overflow:auto; }
 .note-item { background:#f1f5f9; padding:8px 10px; border-radius:6px; font-size:.75rem; }
 .timestamp { font-size:.65rem; opacity:.7; }
+.group-header { font-size:.75rem; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:#475569; margin:8px 4px 4px; }
 @media (max-width:600px){ .toolbar { flex-direction:column; align-items:stretch; } }

@@ -389,6 +389,11 @@ function hide(el) { el.classList.add('hidden'); }
 function setMsg(el, text, kind) { el.textContent = text || ''; el.className = `msg ${kind||''}`; }
 
 function statusBadge(status) { return `<span class="badge ${status}">${status}</span>`; }
+function allowedNextStatuses(current){
+	if (current === 'afgerond') return ['afgerond'];
+	if (current === 'in_behandeling') return ['in_behandeling','nieuw','afgerond'];
+	return ['nieuw','in_behandeling','afgerond'];
+}
 function formatOrderNo(n){
 	if (n == null) return '';
 	try { const s = String(parseInt(n,10)); return '#' + s.padStart(5,'0'); } catch { return ''; }
@@ -397,15 +402,22 @@ function formatOrderNo(n){
 function renderOrders(list, supportsStatus) {
 	const c = q('#ordersContainer');
 	if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
-	c.innerHTML = list.map(o => {
+	// Partition by status for grouping
+	const groups = { nieuw: [], in_behandeling: [], afgerond: [] };
+	for (const o of list) {
+		const s = (supportsStatus && o.status) ? o.status : (state.statusOverrides[o.id] || 'nieuw');
+		(groups[s] || groups.nieuw).push(o);
+	}
+	function card(o){
 		const orderNo = o.order_no != null ? formatOrderNo(o.order_no) : '';
 		// Determine status even if GraphQL doesn't expose it: fall back to local override or assume 'nieuw'
 		const effectiveStatus = (supportsStatus && o.status) ? o.status : (state.statusOverrides[o.id] || 'nieuw');
 		const statusClass = effectiveStatus ? ` status-${effectiveStatus}` : '';
+		const opts = allowedNextStatuses(effectiveStatus);
 		return `
 		<div class="order-card${statusClass}" data-id="${o.id}">
 			<h3>${orderNo || '(zonder nummer)'}</h3>
-			${effectiveStatus ? `<div class="status-corner"><select class="status-select status-${effectiveStatus}" data-order-id="${o.id}">${['nieuw','in_behandeling','afgerond'].map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>` : ''}
+			${effectiveStatus ? `<div class="status-corner"><select class="status-select status-${effectiveStatus}" data-order-id="${o.id}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>` : ''}
 			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>
 			<div class="row"><strong>Telefoon:</strong> ${o.telefoon || '-'}</div>
 			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>
@@ -416,7 +428,13 @@ function renderOrders(list, supportsStatus) {
 			</div>
 		</div>
 	`;
-	}).join('');
+	}
+	// Order groups: nieuw, in_behandeling, afgerond
+	const sections = [];
+	if (groups.nieuw.length) sections.push(`<div class="group-header">Nieuw</div>` + groups.nieuw.map(card).join(''));
+	if (groups.in_behandeling.length) sections.push(`<div class="group-header">In behandeling</div>` + groups.in_behandeling.map(card).join(''));
+	if (groups.afgerond.length) sections.push(`<div class="group-header">Afgerond</div>` + groups.afgerond.map(card).join(''));
+	c.innerHTML = sections.join('');
 }
 
 function renderCustomers(list) {
@@ -463,9 +481,10 @@ async function openOrderDialog(order) {
 	try { const n = await gqlRequest(GQL.orderNotes, { orderId: order.id }); notes = n.order_notes; } catch {}
 
 	const effectiveStatus = (state.supportsOrderStatus !== false && order.status) ? order.status : (state.statusOverrides[order.id] || 'nieuw');
+	const opts = allowedNextStatuses(effectiveStatus);
 	q('#dlgBody').innerHTML = `
 		<div><strong>Naam:</strong> ${order.naam || '-'} · <strong>Contact:</strong> ${order.telefoon || '-'} · ${order.email || '-'}</div>
-		<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${['nieuw','in_behandeling','afgerond'].map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
+		<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
 		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
 		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
 		<div class="note-box">

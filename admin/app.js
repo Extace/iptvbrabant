@@ -76,6 +76,8 @@ async function gqlRequest(query, variables) {
     headers: {
       'Content-Type': 'application/json',
       ...(state.accessToken ? { 'Authorization': `Bearer ${state.accessToken}` } : {}),
+      // Force admin role when authenticated (must be in allowed roles for the user)
+      'x-hasura-role': 'admin',
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -89,6 +91,10 @@ async function gqlRequest(query, variables) {
   const text = await res.text();
   let json = null; try { json = JSON.parse(text); } catch {}
   if (!res.ok || json?.errors) {
+    // Helpful debug hint if the role lacks permissions and fields vanish from schema
+    if (json?.errors?.[0]?.message?.includes("not found in type: 'query_root'")) {
+      console.warn('[admin] Query field missing for role. Check user allowed roles/default_role and Hasura permissions.');
+    }
     throw new Error(json?.errors ? JSON.stringify(json.errors) : `GQL ${res.status}: ${text}`);
   }
   return json.data;

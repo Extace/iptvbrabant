@@ -14,6 +14,7 @@ const state = {
   refreshToken: null,
   user: null,
   view: 'orders', // 'orders' | 'customers'
+  supportsOrderStatus: undefined, // detect at runtime if 'status' column is available to this role
 };
 
 function loadTokens() {
@@ -158,6 +159,23 @@ const GQL = {
       }
     }
   `,
+  listOrdersNoStatus: `
+    query ListOrders($where: orders_bool_exp) {
+      orders(order_by: { created_at: desc }, where: $where) {
+        id
+        klanttype
+        naam
+        telefoon
+        email
+        adres
+        producten
+        totaal
+        opmerkingen
+        created_at
+        updated_at
+      }
+    }
+  `,
   orderNotes: `
     query Notes($orderId: uuid!) {
       order_notes(where: { order_id: { _eq: $orderId } }, order_by: { created_at: desc }) {
@@ -250,19 +268,19 @@ function setMsg(el, text, kind) { el.textContent = text || ''; el.className = `m
 
 function statusBadge(status) { return `<span class="badge ${status}">${status}</span>`; }
 
-function renderOrders(list) {
+function renderOrders(list, supportsStatus) {
   const c = q('#ordersContainer');
   if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
   c.innerHTML = list.map(o => `
     <div class="order-card" data-id="${o.id}">
-      <h3>${o.naam || '(naam onbekend)'} ${statusBadge(o.status)}</h3>
+      <h3>${o.naam || '(naam onbekend)'} ${supportsStatus && o.status ? statusBadge(o.status) : ''}</h3>
       <div class="row"><strong>Contact:</strong> ${o.telefoon || '-'} · ${o.email || '-'}</div>
       <div class="row"><strong>Gemaakt:</strong> ${new Date(o.created_at).toLocaleString()}</div>
       <div class="row"><strong>Totaal:</strong> ${o.totaal || '-'}</div>
       <div class="actions">
         <button class="btn" data-act="detail">Details</button>
-        <button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>
-        <button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>
+        ${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="in_behandeling">→ In behandeling</button>` : ''}
+        ${supportsStatus ? `<button class="btn btn-secondary" data-act="status" data-next="afgerond">Markeer afgerond</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -309,7 +327,7 @@ async function openOrderDialog(order) {
 
   q('#dlgBody').innerHTML = `
     <div><strong>Naam:</strong> ${order.naam || '-'} · <strong>Contact:</strong> ${order.telefoon || '-'} · ${order.email || '-'}</div>
-    <div><strong>Status:</strong> ${statusBadge(order.status)}</div>
+    ${state.supportsOrderStatus && order.status ? `<div><strong>Status:</strong> ${statusBadge(order.status)}</div>` : ''}
     <div><strong>Adres:</strong> ${order.adres || '-'}</div>
     <div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
     <div class="note-box">
@@ -351,8 +369,27 @@ async function loadAndRender() {
       } else {
         // still include a noop _or to keep query simpler? Not required.
       }
-      const data = await gqlRequest(GQL.listOrders, { where });
-      renderOrders(data.orders);
+      let data;
+      if (state.supportsOrderStatus === false) {
+        data = await gqlRequest(GQL.listOrdersNoStatus, { where });
+        renderOrders(data.orders, false);
+      } else {
+        try {
+          data = await gqlRequest(GQL.listOrders, { where });
+          state.supportsOrderStatus = true;
+          renderOrders(data.orders, true);
+        } catch (e) {
+          // Detect missing 'status' field and fallback
+          const msg = e.message || String(e);
+          if (/field '\s*status\s*' not found in type:\s*'orders'/i.test(msg)) {
+            state.supportsOrderStatus = false;
+            const data2 = await gqlRequest(GQL.listOrdersNoStatus, { where });
+            renderOrders(data2.orders, false);
+          } else {
+            throw e;
+          }
+        }
+      }
       q('#ordersContainer').classList.remove('hidden');
       q('#customersContainer').classList.add('hidden');
     } else {
@@ -513,14 +550,30 @@ function wireEvents() {
     if (!id) return;
 
     // fetch the current order to ensure we have up-to-date fields
-    const list = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
-    const order = list.orders_by_pk;
+    let orderRes;
+    try {
+      if (state.supportsOrderStatus === false) {
+        orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+        state.supportsOrderStatus = false;
+      } else {
+        orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
+        state.supportsOrderStatus = true;
+      }
+    } catch (e) {
+      const msg = e.message || String(e);
+      if (/field '\s*status\s*' not found in type:\s*'orders'/i.test(msg)) {
+        state.supportsOrderStatus = false;
+        orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+      } else { throw e; }
+    }
+    const order = orderRes.orders_by_pk;
     if (!order) return;
 
     const act = btn.dataset.act;
     if (act === 'detail') {
       await openOrderDialog(order);
     } else if (act === 'status') {
+      if (!state.supportsOrderStatus) return; // buttons shouldn't be present, but guard anyway
       const next = btn.dataset.next;
       await gqlRequest(GQL.updateStatus, { id, status: next });
       await loadAndRender();

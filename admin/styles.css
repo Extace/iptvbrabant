@@ -31,6 +31,7 @@ input:focus, select:focus, textarea:focus { outline:2px solid #3b82f6; border-co
 #ordersContainer { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
 .order-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; position:relative; }
 .order-card h3 { margin:0; font-size:1rem; }
+.order-card .status-corner { position:absolute; top:10px; right:10px; }
 .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.7rem; font-weight:600; letter-spacing:.5px; }
 .badge.nieuw { background:#fbbf24; color:#1e293b; }
 .badge.in_behandeling { background:#3b82f6; color:#fff; }

@@ -357,6 +357,7 @@ function renderOrders(list, supportsStatus) {
 		return `
 		<div class="order-card" data-id="${o.id}">
 			<h3>${orderNo || '(zonder nummer)'}</h3>
+				${supportsStatus && o.status ? `<div class="status-corner">${statusBadge(o.status)}</div>` : ''}
 			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>
 			<div class="row"><strong>Telefoon:</strong> ${o.telefoon || '-'}</div>
 			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>

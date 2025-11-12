@@ -417,6 +417,8 @@ function renderOrders(list, supportsStatus) {
 		const effectiveStatus = (supportsStatus && o.status) ? o.status : (state.statusOverrides[o.id] || 'nieuw');
 		const statusClass = effectiveStatus ? ` status-${effectiveStatus}` : '';
 		const opts = allowedNextStatuses(effectiveStatus);
+		const klantComment = (o.opmerkingen && o.opmerkingen !== 'Geen') ? o.opmerkingen.trim() : '';
+		const commentPreview = klantComment ? `<div class="row"><strong>Opmerking:</strong> ${klantComment.length>60? klantComment.slice(0,57)+'…': klantComment}</div>` : '';
 		return `
 		<div class="order-card${statusClass}" data-id="${o.id}">
 			<h3>${orderNo || '(zonder nummer)'}</h3>
@@ -426,6 +428,7 @@ function renderOrders(list, supportsStatus) {
 			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>
 			<div class="row"><strong>Datum:</strong> ${new Date(o.created_at).toLocaleString()}</div>
 			<div class="row"><strong>Klanttype:</strong> ${o.klanttype || '-'}</div>
+			${commentPreview}
 			<div class="actions" style="margin-top:8px">
 				<button class="btn" data-act="detail">Details</button>
 			</div>
@@ -523,6 +526,8 @@ async function openOrderDialog(order) {
 		<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
 		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
 		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
+		${order.opmerkingen ? `<div><strong>Klantopmerking:</strong> <pre style="white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px">${order.opmerkingen}</pre></div>` : ''}
+		${order.referrer_email ? `<div><strong>Referral (e-mail):</strong> ${order.referrer_email}</div>` : ''}
 		<div class="note-box">
 			<textarea id="noteInput" rows="3" placeholder="Interne notitie toevoegen..."></textarea>
 			<button id="addNoteBtn" class="btn">Toevoegen</button>
@@ -857,16 +862,16 @@ function wireEvents() {
 		try {
 				if (state.supportsOrderStatus === false) {
 					if (state.supportsOrderNo === false) {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`, { id });
 					} else {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`, { id });
 					}
 					state.supportsOrderStatus = false;
 				} else {
 					if (state.supportsOrderNo === false) {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`, { id });
 					} else {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`, { id });
 					}
 					state.supportsOrderStatus = true;
 				}
@@ -880,11 +885,11 @@ function wireEvents() {
 					// retry with reduced projection
 					const base = state.supportsOrderStatus === false
 						? (state.supportsOrderNo === false
-								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`
-								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen created_at updated_at } }`)
+								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`
+								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen referrer_email created_at updated_at } }`)
 						: (state.supportsOrderNo === false
-								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`
-								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`);
+								? `query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`
+								: `query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`);
 					orderRes = await gqlRequest(base, { id });
 				} else { throw e; }
 		}

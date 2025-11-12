@@ -386,8 +386,9 @@ async function loadAndRender() {
 					renderOrders(data.orders, true);
 				} catch (e) {
 					// Detect missing 'status' field and fallback
-					const msg = e.message || String(e);
-					if (/field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg)) {
+							const msg = e.message || String(e);
+							const missingStatus = msg.includes("field 'status' not found in type: 'orders'") || /field ['\"]?status['\"]? not found/i.test(msg);
+							if (missingStatus) {
 						state.supportsOrderStatus = false;
 						const data2 = await gqlRequest(GQL.listOrdersNoStatus, { where });
 						renderOrders(data2.orders, false);
@@ -405,16 +406,38 @@ async function loadAndRender() {
 			q('#ordersContainer').classList.add('hidden');
 		}
 	} catch (e) {
-		console.warn('[admin] load failed', e);
-		const target = state.view === 'customers' ? q('#customersContainer') : q('#ordersContainer');
-		const msg = e.message || String(e);
-		target.innerHTML = `<div class="panel" style="color:#b91c1c">Fout bij laden: ${msg}</div>`;
-		if (/Sessiesleutel verlopen|invalid-jwt|JWTExpired|Niet geautoriseerd/i.test(msg)) {
-			// force logout UI if tokens are no longer valid
-			state.accessToken = null; state.refreshToken = null; state.user = null; saveTokens();
-			hide(q('#appSection')); show(q('#authSection'));
-			setMsg(q('#authMsg'), 'Sessie verlopen. Log opnieuw in.', '');
-		}
+			console.warn('[admin] load failed', e);
+			const target = state.view === 'customers' ? q('#customersContainer') : q('#ordersContainer');
+			const msg = e.message || String(e);
+			// If status field caused the error and we haven't tried fallback yet, force fallback path
+			if (msg.includes("field 'status' not found in type: 'orders'") && state.view === 'orders' && state.supportsOrderStatus !== false) {
+				try {
+					state.supportsOrderStatus = false;
+					const searchRaw = q('#searchInput').value?.trim();
+					const searchPattern = searchRaw ? `%${searchRaw}%` : '%';
+					const statusVal = q('#statusFilter').value || null;
+					const where = {};
+					if (statusVal) where.status = { _eq: statusVal }; // will be ignored by Hasura if column is absent? If not we remove it.
+					if (searchPattern && searchPattern !== '%') {
+						where._or = [
+							{ naam: { _ilike: searchPattern } },
+							{ email: { _ilike: searchPattern } },
+							{ telefoon: { _ilike: searchPattern } }
+						];
+					}
+					const data2 = await gqlRequest(GQL.listOrdersNoStatus, { where });
+					renderOrders(data2.orders, false);
+					return; // successful fallback
+				} catch (e2) {
+					console.warn('[admin] fallback after missing status failed', e2);
+				}
+			}
+			target.innerHTML = `<div class="panel" style="color:#b91c1c">Fout bij laden: ${msg}</div>`;
+			if (/Sessiesleutel verlopen|invalid-jwt|JWTExpired|Niet geautoriseerd/i.test(msg)) {
+				state.accessToken = null; state.refreshToken = null; state.user = null; saveTokens();
+				hide(q('#appSection')); show(q('#authSection'));
+				setMsg(q('#authMsg'), 'Sessie verlopen. Log opnieuw in.', '');
+			}
 	}
 }
 

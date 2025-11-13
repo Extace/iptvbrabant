@@ -562,13 +562,20 @@ async function openOrderDialog(order) {
 
 	const effectiveStatus = (state.supportsOrderStatus !== false && order.status) ? order.status : (state.statusOverrides[order.id] || 'nieuw');
 	const opts = allowedNextStatuses(effectiveStatus);
+	// Determine possible contact preference fields (schema might evolve)
+	const contactPref = order.contactvoorkeur || order.contact_preference || '-';
 	q('#dlgBody').innerHTML = `
-		<div><strong>Naam:</strong> ${order.naam || '-'} · <strong>Contact:</strong> ${order.telefoon || '-'} · ${order.email || '-'}</div>
-		<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
+		<div style="margin-bottom:4px"><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
+		<div><strong>Naam:</strong> ${order.naam || '-'}</div>
+		<div><strong>Telefoonnummer:</strong> ${order.telefoon || '-'}</div>
+		<div><strong>E-mail:</strong> ${order.email || '-'}</div>
 		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
-		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px">${order.producten || '-'}</pre></div>
-		${order.opmerkingen ? `<div><strong>Klantopmerking:</strong> <pre style="white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px">${order.opmerkingen}</pre></div>` : ''}
+		<div><strong>Contactvoorkeur:</strong> ${contactPref}</div>
+		<div><strong>Klanttype:</strong> ${order.klanttype || '-'}</div>
+		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;margin:4px 0">${order.producten || '-'}</pre></div>
+		${order.opmerkingen ? `<div><strong>Klantopmerking:</strong> <pre style=\"white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px;margin:4px 0\">${order.opmerkingen}</pre></div>` : `<div><strong>Klantopmerking:</strong> Geen</div>`}
 		${(state.supportsReferrerEmail !== false && order.referrer_email) ? `<div><strong>Referral (e-mail):</strong> ${order.referrer_email}</div>` : ''}
+		<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0"/>
 		<div class="note-box">
 			<textarea id="noteInput" rows="3" placeholder="Interne notitie toevoegen..."></textarea>
 			<button id="addNoteBtn" class="btn">Toevoegen</button>

@@ -578,6 +578,12 @@ async function openOrderDialog(order) {
 		</div>
 	`;
 
+	// Apply status-based background color class to dialog parent
+	dlg.classList.remove('dialog-status-nieuw','dialog-status-in_behandeling','dialog-status-afgerond');
+	if (['nieuw','in_behandeling','afgerond'].includes(effectiveStatus)) {
+		dlg.classList.add('dialog-status-' + effectiveStatus);
+	}
+
 	dlg.showModal();
 
 	// Dialog status change

@@ -5,7 +5,10 @@
   "scripts": {
     "lint": "eslint . --ext .js,.html",
     "format": "prettier --write \"**/*.{css,js,html,json,md}\"",
-    "test": "jest"
+    "test": "jest",
+    "hasura:console": "hasura console --endpoint %HASURA_GRAPHQL_ENDPOINT% --admin-secret %HASURA_GRAPHQL_ADMIN_SECRET% --save",
+    "hasura:migrate:apply": "hasura migrate apply --endpoint %HASURA_GRAPHQL_ENDPOINT% --admin-secret %HASURA_GRAPHQL_ADMIN_SECRET% --all-databases && hasura metadata apply --endpoint %HASURA_GRAPHQL_ENDPOINT% --admin-secret %HASURA_GRAPHQL_ADMIN_SECRET%",
+    "hasura:metadata:export": "hasura metadata export --endpoint %HASURA_GRAPHQL_ENDPOINT% --admin-secret %HASURA_GRAPHQL_ADMIN_SECRET%"
   },
   "devDependencies": {
     "eslint": "^8.50.0",

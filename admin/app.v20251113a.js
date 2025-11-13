@@ -580,15 +580,18 @@ async function openOrderDialog(order) {
 			<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
 			<div style="font-size:.75rem;font-weight:600;opacity:.75">Bestelddatum: ${orderDate}</div>
 		</div>
-		<div><strong>Naam:</strong> ${order.naam || '-'}</div>
-		<div><strong>Telefoonnummer:</strong> ${order.telefoon || '-'}</div>
-		<div><strong>E-mail:</strong> ${order.email || '-'}</div>
-		<div><strong>Adres:</strong> ${order.adres || '-'}</div>
-		<div><strong>Contactvoorkeur:</strong> ${contactPref}</div>
-		<div><strong>Klanttype:</strong> ${order.klanttype || '-'}</div>
-		<div><strong>Producten:</strong> <pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;margin:4px 0">${order.producten || '-'}</pre></div>
-		${order.opmerkingen ? `<div><strong>Klantopmerking:</strong> <pre style=\"white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px;margin:4px 0\">${order.opmerkingen}</pre></div>` : `<div><strong>Klantopmerking:</strong> Geen</div>`}
-		${(state.supportsReferrerEmail !== false && order.referrer_email) ? `<div><strong>Referral (e-mail):</strong> ${order.referrer_email}</div>` : ''}
+		<div id="field-naam"><strong>Naam:</strong> <span class="value">${order.naam || '-'}</span></div>
+		<div id="field-telefoon"><strong>Telefoonnummer:</strong> <span class="value">${order.telefoon || '-'}</span></div>
+		<div id="field-email"><strong>E-mail:</strong> <span class="value">${order.email || '-'}</span></div>
+		<div id="field-adres"><strong>Adres:</strong> <span class="value">${order.adres || '-'}</span></div>
+		<div id="field-contactpref"><strong>Contactvoorkeur:</strong> <span class="value">${contactPref}</span></div>
+		<div id="field-klanttype"><strong>Klanttype:</strong> <span class="value">${order.klanttype || '-'}</span></div>
+		<div id="field-producten"><strong>Producten:</strong> <pre class="value" style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;margin:4px 0">${order.producten || '-'}</pre></div>
+		<div id="field-opmerkingen"><strong>Klantopmerking:</strong> ${order.opmerkingen ? `<pre class="value" style=\"white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px;margin:4px 0\">${order.opmerkingen}</pre>` : '<span class="value">Geen</span>'}</div>
+		${(state.supportsReferrerEmail !== false && order.referrer_email) ? `<div id="field-refemail"><strong>Referral (e-mail):</strong> <span class="value">${order.referrer_email}</span></div>` : ''}
+		<div id="editControls" style="display:flex;gap:8px;margin-top:4px">
+			<button id="editOrderBtn" type="button" class="btn btn-secondary" style="font-size:.7rem">Bewerken</button>
+		</div>
 		<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0"/>
 		<div class="note-box">
 			<textarea id="noteInput" rows="3" placeholder="Interne notitie toevoegen..."></textarea>
@@ -630,6 +633,84 @@ async function openOrderDialog(order) {
 		dlg.close();
 		await loadAndRender();
 	};
+
+	// --- Edit Mode Logic ---
+	const original = { ...order }; // snapshot for diff
+	const editBtn = q('#editOrderBtn');
+	let inEdit = false;
+
+	function enterEdit() {
+		if (inEdit) return; inEdit = true;
+		editBtn.textContent = 'Opslaan'; editBtn.classList.remove('btn-secondary'); editBtn.classList.add('btn');
+		// Add cancel button
+		const cancel = document.createElement('button');
+		cancel.id = 'cancelEditBtn'; cancel.type='button'; cancel.textContent='Annuleren'; cancel.className='btn btn-secondary'; cancel.style.fontSize='.7rem';
+		editBtn.after(cancel);
+		// Replace spans with inputs
+		makeEditable('field-naam','text', original.naam);
+		makeEditable('field-telefoon','text', original.telefoon);
+		makeEditable('field-email','email', original.email);
+		makeEditable('field-adres','textarea', original.adres);
+		makeEditable('field-contactpref','text', original.contactvoorkeur || original.contact_preference);
+		makeEditable('field-klanttype','text', original.klanttype);
+		makeEditable('field-producten','textarea', original.producten);
+		makeEditable('field-opmerkingen','textarea', original.opmerkingen);
+		cancel.onclick = () => { dlg.close(); openOrderDialog(original); };
+	}
+
+	function makeEditable(id, kind, value) {
+		const wrap = q('#'+id); if (!wrap) return;
+		const valEl = wrap.querySelector('.value') || wrap.querySelector('pre.value');
+		let input;
+		if (kind === 'textarea') { input = document.createElement('textarea'); input.rows = 3; }
+		else { input = document.createElement('input'); input.type = kind; }
+		input.value = value || '';
+		input.style.width='100%'; input.style.margin='4px 0';
+		if (valEl) valEl.replaceWith(input);
+		wrap.dataset.editing = '1';
+	}
+
+	async function saveEdits() {
+		const changed = {}; const diffs = [];
+		collectChange('naam','field-naam');
+		collectChange('telefoon','field-telefoon');
+		collectChange('email','field-email');
+		collectChange('adres','field-adres');
+		collectChange('klanttype','field-klanttype');
+		collectChange('producten','field-producten');
+		collectChange('opmerkingen','field-opmerkingen');
+		function collectChange(field, id){
+			const wrap = q('#'+id); if (!wrap) return; const input = wrap.querySelector('input,textarea'); if (!input) return;
+			const before = original[field] || ''; const after = (input.value||'').trim();
+			if (after !== (before||'')) { changed[field] = after || null; diffs.push(`${field}: "${truncate(before)}" → "${truncate(after)}"`); }
+		}
+		function truncate(v){ if (v==null) return ''; const s=String(v); return s.length>40? s.slice(0,37)+'…': s; }
+		if (!Object.keys(changed).length){ editBtn.textContent='Geen wijzigingen'; setTimeout(()=>{ dlg.close(); openOrderDialog(original); }, 800); return; }
+		editBtn.disabled=true; editBtn.textContent='Opslaan…';
+		// Build dynamic mutation
+		const mutation = `mutation UpdateOrder($id: uuid!, $changes: orders_set_input!){ update_orders_by_pk(pk_columns:{id:$id}, _set:$changes){ id naam telefoon email adres klanttype producten opmerkingen status updated_at } }`;
+		try {
+			await gqlRequest(mutation, { id: original.id, changes: changed });
+		} catch (e) {
+			// Fallback: remove missing fields and retry once
+			const msg = e.message||''; let removed=false;
+			for (const f of Object.keys(changed)) {
+				if (new RegExp(`field ['\"]?${f}['\"]? not found`, 'i').test(msg)) { delete changed[f]; removed=true; }
+			}
+			if (removed && Object.keys(changed).length){
+				try { await gqlRequest(mutation, { id: original.id, changes: changed }); }
+				catch(e2){ alert('Kon wijzigingen niet opslaan: '+(e2.message||e2)); return; }
+			} else { alert('Kon wijzigingen niet opslaan: '+msg); return; }
+		}
+		// Insert auto note summarizing changes
+		try {
+			const noteText = 'Wijzigingen: ' + diffs.join('; ');
+			await gqlRequest(GQL.addNote, { orderId: original.id, note: noteText.slice(0,1000) });
+		} catch (e3) { console.warn('Kon notitie niet toevoegen', e3); }
+		dlg.close(); await loadAndRender();
+	}
+
+	editBtn.onclick = () => { if (!inEdit) enterEdit(); else saveEdits(); };
 }
 
 async function loadAndRender() {

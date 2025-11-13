@@ -15,9 +15,11 @@ jobs:
         run: curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
       - name: Apply migrations & metadata
         env:
-          HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET }}
+          HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}
           HASURA_GRAPHQL_ENDPOINT: ${{ secrets.HASURA_GRAPHQL_ENDPOINT }}
         run: |
           cd hasura
-          hasura migrate apply --endpoint $HASURA_GRAPHQL_ENDPOINT --admin-secret $HASURA_GRAPHQL_ADMIN_SECRET --all-databases
-          hasura metadata apply --endpoint $HASURA_GRAPHQL_ENDPOINT --admin-secret $HASURA_GRAPHQL_ADMIN_SECRET
+          echo "Endpoint: $HASURA_GRAPHQL_ENDPOINT"
+          echo "Admin Secret: $HASURA_GRAPHQL_ADMIN_SECRET"
+          hasura migrate apply --endpoint "$HASURA_GRAPHQL_ENDPOINT" --admin-secret "$HASURA_GRAPHQL_ADMIN_SECRET" --all-databases
+          hasura metadata apply --endpoint "$HASURA_GRAPHQL_ENDPOINT" --admin-secret "$HASURA_GRAPHQL_ADMIN_SECRET"

@@ -433,6 +433,47 @@ const KLANTTYPE_OPTIONS = [
     'Overig'
 ];
 
+// Product catalog (align with webshop) - extend as needed
+const PRODUCT_CATALOG = [
+	'1 Jaar IPTV (Verplicht)',
+	'Android TV Box Standaard',
+	'Android TV Box Premium',
+	'Extra Afstandsbediening',
+	'Installatie aan huis',
+	'Antenne / Signaalversterker',
+	'Maand IPTV',
+	'6 Maanden IPTV'
+];
+
+function parseProductsText(txt){
+	if (!txt) return {};
+	const lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+	const map = {};
+	for (const line of lines){
+		// Accept patterns like "- Product Naam: 2x" or bullet •
+		const m = line.match(/[\-•]\s*(.+?):?\s*(\d+)x/i);
+		if (m){
+			const name = m[1].trim();
+			const qty = parseInt(m[2],10);
+			map[name] = qty;
+		} else {
+			// If pattern not matched store as custom
+			map[line.replace(/[\-•]\s*/,'')] = 1;
+		}
+	}
+	return map;
+}
+
+function serializeProducts(map){
+	const lines = [];
+	for (const name of Object.keys(map)){
+		const qty = map[name];
+		if (!qty) continue;
+		lines.push(`- ${name}: ${qty}x`);
+	}
+	return lines.join('\n');
+}
+
 // UI logic
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
@@ -675,8 +716,35 @@ async function openOrderDialog(order) {
 			input = document.createElement('select');
 			KLANTTYPE_OPTIONS.forEach(opt => { const o=document.createElement('option'); o.value=opt; o.textContent=opt; input.appendChild(o); });
 			input.value = value || KLANTTYPE_OPTIONS[0];
+		} else if (id === 'field-producten') {
+			// Replace producten with dynamic editor
+			const holder = document.createElement('div'); holder.className='producten-editor'; holder.style.display='flex'; holder.style.flexDirection='column'; holder.style.gap='6px';
+			const currentMap = parseProductsText(value);
+			// Ensure all catalog entries exist (qty default 0)
+			PRODUCT_CATALOG.forEach(name=>{ if (!(name in currentMap)) currentMap[name]=0; });
+			for (const name of PRODUCT_CATALOG){
+				const row = document.createElement('div'); row.className='prod-row'; row.style.display='flex'; row.style.alignItems='center'; row.style.gap='8px';
+				const label = document.createElement('span'); label.textContent = name; label.style.flex='1'; label.style.fontSize='.75rem';
+				const minus = document.createElement('button'); minus.type='button'; minus.textContent='-'; minus.className='btn btn-secondary'; minus.style.padding='4px 10px'; minus.style.fontSize='.7rem';
+				const qtySpan = document.createElement('span'); qtySpan.textContent=currentMap[name]; qtySpan.style.minWidth='20px'; qtySpan.style.textAlign='center'; qtySpan.style.fontWeight='600'; qtySpan.style.fontSize='.75rem';
+				const plus = document.createElement('button'); plus.type='button'; plus.textContent='+'; plus.className='btn'; plus.style.padding='4px 10px'; plus.style.fontSize='.7rem';
+				function refreshVisibility(){ row.style.display = (parseInt(qtySpan.textContent,10)===0) ? 'none' : 'flex'; }
+				minus.onclick = ()=>{ let v=parseInt(qtySpan.textContent,10); if (v>0){ v--; qtySpan.textContent=v; currentMap[name]=v; refreshVisibility(); } };
+				plus.onclick = ()=>{ let v=parseInt(qtySpan.textContent,10); v++; qtySpan.textContent=v; currentMap[name]=v; row.style.display='flex'; };
+				refreshVisibility();
+				row.append(label, minus, qtySpan, plus);
+				holder.appendChild(row);
+			}
+			// Add hidden input that will hold serialized value for saveEdits
+			const hidden = document.createElement('textarea'); hidden.style.display='none'; hidden.value = serializeProducts(currentMap);
+			holder.appendChild(hidden);
+			// Update hidden on any change (plus/minus already update qtySpan)
+			holder.addEventListener('click',()=>{ hidden.value = serializeProducts(currentMap); });
+			if (valEl) valEl.replaceWith(holder);
+			wrap.dataset.editing='1';
+			return; // done
 		} else if (kind === 'textarea') {
-			input = document.createElement('textarea'); input.rows = (id === 'field-producten') ? 6 : 3;
+			input = document.createElement('textarea'); input.rows = 3;
 		} else {
 			input = document.createElement('input'); input.type = kind;
 		}
@@ -694,12 +762,32 @@ async function openOrderDialog(order) {
 		collectChange('email','field-email');
 		collectChange('adres','field-adres');
 		collectChange('klanttype','field-klanttype');
+		// Custom collect for producten editor
 		collectChange('producten','field-producten');
 		collectChange('opmerkingen','field-opmerkingen');
 		function collectChange(field, id){
-			const wrap = q('#'+id); if (!wrap) return; const input = wrap.querySelector('input,textarea,select'); if (!input) return;
-			const before = original[field] || ''; const after = (input.value||'').trim();
-			if (after !== (before||'')) { changed[field] = after || null; diffs.push(`${field}: "${truncate(before)}" → "${truncate(after)}"`); }
+			const wrap = q('#'+id); if (!wrap) return; let input = wrap.querySelector('input,textarea,select');
+			if (field==='producten'){ // hidden serialized value inside editor
+				input = wrap.querySelector('.producten-editor textarea');
+			}
+			if (!input) return;
+			const before = (original[field] || '').trim(); const after = (input.value||'').trim();
+			if (after !== before) {
+				changed[field] = after || null;
+				// For producten diff show quantity summary
+				if (field==='producten') {
+					const beforeMap = parseProductsText(before);
+					const afterMap = parseProductsText(after);
+					const diffParts = [];
+					const allNames = new Set([...Object.keys(beforeMap), ...Object.keys(afterMap)]);
+					for (const n of allNames){
+						const b = beforeMap[n]||0; const a = afterMap[n]||0; if (b!==a) diffParts.push(`${n}: ${b}→${a}`);
+					}
+					diffs.push('producten gewijzigd ('+diffParts.join('; ')+')');
+				} else {
+					diffs.push(`${field}: "${truncate(before)}" → "${truncate(after)}"`);
+				}
+			}
 		}
 		function truncate(v){ if (v==null) return ''; const s=String(v); return s.length>40? s.slice(0,37)+'…': s; }
 

@@ -55,6 +55,9 @@ input:focus, select:focus, textarea:focus { outline:2px solid #3b82f6; border-co
 .actions { display:flex; gap:6px; flex-wrap:wrap; }
 .actions button { font-size:.75rem; padding:6px 10px; }
 .dialog { width:clamp(320px, 60vw, 640px); }
+.dialog-status-nieuw .dialog { background:#fee2e2; }
+.dialog-status-in_behandeling .dialog { background:#fef9c3; }
+.dialog-status-afgerond .dialog { background:#dcfce7; }
 .dlg-body { font-size:.9rem; line-height:1.4; display:flex; flex-direction:column; gap:14px; }
 .note-box { display:flex; gap:8px; }
 .note-box textarea { flex:1; resize:vertical; }

@@ -823,8 +823,8 @@ function wireEvents() {
 				try {
 					await gqlRequest(GQL.insertCustomer, { obj: { naam, email, telefoon, adres, notes, extra } });
 					imported++;
-				} catch (e) {
-					console.warn('Import rij mislukt', i+1, e.message || e);
+				} catch (e2) {
+					console.warn('Import rij mislukt', i+1, e2.message || e2);
 					skipped++;
 				}
 			}
@@ -884,7 +884,7 @@ function wireEvents() {
 				const noStatus = /field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg);
 				const noNumber = /field '\\s*order_no\\s*' not found in type:\\s*'orders'/i.test(msg);
 				const noRefEmail = /field '\\s*referrer_email\\s*' not found in type:\\s*'orders'/i.test(msg);
-				if (noStatus || noNumber) {
+				if (noStatus || noNumber || noRefEmail) {
 					if (noStatus) state.supportsOrderStatus = false;
 					if (noNumber) state.supportsOrderNo = false;
 					if (noRefEmail) state.supportsReferrerEmail = false;

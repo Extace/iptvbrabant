@@ -901,29 +901,27 @@ function wireEvents() {
 			// fetch the current order to ensure we have up-to-date fields
 		let orderRes;
 		try {
+				const includeRef = state.supportsReferrerEmail === true; // only include when explicitly confirmed
 				if (state.supportsOrderStatus === false) {
-					const wantRef = state.supportsReferrerEmail !== false;
 					if (state.supportsOrderNo === false) {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen ${wantRef?'referrer_email':''} created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal opmerkingen ${includeRef?'referrer_email':''} created_at updated_at } }`, { id });
 					} else {
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen ${wantRef?'referrer_email':''} created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal opmerkingen ${includeRef?'referrer_email':''} created_at updated_at } }`, { id });
 					}
 					state.supportsOrderStatus = false;
 				} else {
 					if (state.supportsOrderNo === false) {
-						const wantRef2 = state.supportsReferrerEmail !== false;
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen ${wantRef2?'referrer_email':''} created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ id naam telefoon email adres producten totaal status opmerkingen ${includeRef?'referrer_email':''} created_at updated_at } }`, { id });
 					} else {
-						const wantRef3 = state.supportsReferrerEmail !== false;
-						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen ${wantRef3?'referrer_email':''} created_at updated_at } }`, { id });
+						orderRes = await gqlRequest(`query($id: uuid!){ orders_by_pk(id:$id){ order_no id naam telefoon email adres producten totaal status opmerkingen ${includeRef?'referrer_email':''} created_at updated_at } }`, { id });
 					}
 					state.supportsOrderStatus = true;
 				}
 		} catch (e) {
 			const msg = e.message || String(e);
-			const noStatus = /field '\\s*status\\s*' not found in type:\s*'orders'/i.test(msg);
-			const noNumber = /field '\\s*order_no\\s*' not found in type:\s*'orders'/i.test(msg);
-			const noRefEmail = /field '\\s*referrer_email\\s*' not found in type:\s*'orders'/i.test(msg);
+			const noStatus = /field ['\"]?status['\"]? not found/i.test(msg);
+			const noNumber = /field ['\"]?order_no['\"]? not found/i.test(msg);
+			const noRefEmail = /field ['\"]?referrer_email['\"]? not found/i.test(msg);
 			if (noStatus || noNumber || noRefEmail) {
 					if (noStatus) state.supportsOrderStatus = false;
 					if (noNumber) state.supportsOrderNo = false;

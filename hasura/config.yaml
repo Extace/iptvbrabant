@@ -1,5 +1,6 @@
 version: 3
-endpoint: ${HASURA_GRAPHQL_ENDPOINT}
-admin_secret: ${HASURA_GRAPHQL_ADMIN_SECRET}
+# NOTE: Do not use environment variables here for CI/CD. Pass endpoint and admin_secret as CLI flags in your workflow.
+endpoint: "https://your-subdomain.hasura.eu-west-2.nhost.run/v1" # Replace with your actual endpoint if needed for local use
+# admin_secret: "your-admin-secret" # Do NOT hardcode secrets for CI/CD
 metadata_directory: metadata
 migrations_directory: migrations

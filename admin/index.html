@@ -9,7 +9,7 @@
 <body>
   <div class="container">
   <h1>Admin Dashboard</h1>
-  <div class="build">Build v20251113d</div>
+  <div class="build">Build v20251113f</div>
 
     <section id="authSection" class="panel">
       <h2>Inloggen</h2>
@@ -28,10 +28,11 @@
     </section>
 
     <section id="appSection" class="hidden">
-      <div class="tabbar">
+      <div class="tabbar" style="display:flex;gap:6px;align-items:center">
         <button id="tabOrders" class="tab active">Bestellingen</button>
         <button id="tabCustomers" class="tab">Klanten</button>
         <button id="tabProducts" class="tab">Producten</button>
+        <button id="tabTeam" class="tab" style="margin-left:auto">Team members</button>
       </div>
       <div class="toolbar">
         <div>
@@ -55,6 +56,7 @@
     <div id="ordersContainer" class="list"></div>
       <div id="customersContainer" class="list hidden"></div>
       <div id="productsContainer" class="list hidden"></div>
+      <div id="teamContainer" class="list hidden"></div>
 
       <dialog id="customerDialog">
         <form method="dialog" class="dialog">
@@ -110,9 +112,19 @@
           </div>
         </form>
       </dialog>
+      <dialog id="teamDialog">
+        <form method="dialog" class="dialog">
+          <h3 id="teamDlgTitle">Team lid</h3>
+          <div id="teamDlgBody" class="dlg-body"></div>
+          <div class="dlg-actions">
+            <button id="teamCancelBtn" type="button" class="btn btn-secondary">Annuleren</button>
+            <button id="teamSaveBtn" type="button" class="btn">Opslaan</button>
+          </div>
+        </form>
+      </dialog>
     </section>
   </div>
 
-  <script src="app.v20251113e.js" defer></script>
+  <script src="app.v20251113f.js" defer></script>
 </body>
 </html>

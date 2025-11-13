@@ -99,7 +99,7 @@ async function gqlRequest(query, variables) {
 		const text = await res.text();
 		let json = null; try { json = JSON.parse(text); } catch {}
 
-		if (res.status === 401) {
+			if (res.status === 401) {
 			if (attemptedRefresh) {
 				// second 401, give up
 				throw new Error('Niet geautoriseerd (401)');
@@ -135,7 +135,43 @@ async function gqlRequest(query, variables) {
 			}
 			// Helpful debug hint if the role lacks permissions and fields vanish from schema
 			if (json.errors?.[0]?.message?.includes("not found in type: 'query_root'")) {
-				console.warn('[admin] Query field missing for role. Check user allowed roles/default_role and Hasura permissions.');
+				const missingStatus = /field ['\"]?status['\"]? not found/i.test(json.errors[0].message);
+				const missingUpdated = /field ['\"]?updated_at['\"]? not found/i.test(json.errors[0].message);
+				const missingOrderNo = /field ['\"]?order_no['\"]? not found/i.test(json.errors[0].message);
+				const missingRefEmail = /field ['\"]?referrer_email['\"]? not found/i.test(json.errors[0].message);
+				if (missingStatus || missingUpdated || missingOrderNo || missingRefEmail) {
+					if (missingStatus) state.supportsOrderStatus = false;
+					if (missingUpdated) state.supportsUpdatedAt = false;
+					if (missingOrderNo) state.supportsOrderNo = false;
+					if (missingRefEmail) state.supportsReferrerEmail = false;
+					// Retry with appropriate reduced query
+					try {
+						let d;
+						if (state.supportsOrderStatus === false && state.supportsUpdatedAt === false) {
+							d = (state.supportsOrderNo === false)
+								? await gqlRequest(GQL.listOrdersBasicNoNumber, { where })
+								: await gqlRequest(GQL.listOrdersBasic, { where });
+						} else if (state.supportsOrderStatus === false) {
+							d = (state.supportsOrderNo === false)
+								? await gqlRequest(GQL.listOrdersNoStatusNoNumber, { where })
+								: await gqlRequest(GQL.listOrdersNoStatus, { where });
+						} else if (state.supportsUpdatedAt === false) {
+							d = (state.supportsOrderNo === false)
+								? await gqlRequest(GQL.listOrdersNoUpdatedNoNumber, { where })
+								: await gqlRequest(GQL.listOrdersNoUpdated, { where });
+						} else {
+							// fallback generic
+							d = (state.supportsOrderNo === false)
+								? await gqlRequest(GQL.listOrdersNoNumber, { where })
+								: await gqlRequest(GQL.listOrdersBasic, { where });
+						}
+						data = d;
+					} catch (e2) {
+						throw e2; // bubble if fallback also fails
+					}
+				} else {
+					throw new Error(JSON.stringify(json.errors));
+				}
 			}
 			throw new Error(JSON.stringify(json.errors));
 		}
@@ -881,10 +917,10 @@ function wireEvents() {
 				}
 		} catch (e) {
 			const msg = e.message || String(e);
-				const noStatus = /field '\\s*status\\s*' not found in type:\\s*'orders'/i.test(msg);
-				const noNumber = /field '\\s*order_no\\s*' not found in type:\\s*'orders'/i.test(msg);
-				const noRefEmail = /field '\\s*referrer_email\\s*' not found in type:\\s*'orders'/i.test(msg);
-				if (noStatus || noNumber || noRefEmail) {
+			const noStatus = /field '\\s*status\\s*' not found in type:\s*'orders'/i.test(msg);
+			const noNumber = /field '\\s*order_no\\s*' not found in type:\s*'orders'/i.test(msg);
+			const noRefEmail = /field '\\s*referrer_email\\s*' not found in type:\s*'orders'/i.test(msg);
+			if (noStatus || noNumber || noRefEmail) {
 					if (noStatus) state.supportsOrderStatus = false;
 					if (noNumber) state.supportsOrderNo = false;
 					if (noRefEmail) state.supportsReferrerEmail = false;

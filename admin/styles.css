@@ -55,9 +55,17 @@ input:focus, select:focus, textarea:focus { outline:2px solid #3b82f6; border-co
 .actions { display:flex; gap:6px; flex-wrap:wrap; }
 .actions button { font-size:.75rem; padding:6px 10px; }
 .dialog { width:clamp(320px, 60vw, 640px); }
-.dialog-status-nieuw .dialog { background:#fee2e2; }
-.dialog-status-in_behandeling .dialog { background:#fef9c3; }
-.dialog-status-afgerond .dialog { background:#dcfce7; }
+.dialog-status-nieuw { background:#fee2e2; border:1px solid #f8d5d5; border-radius:16px; padding:0; }
+.dialog-status-in_behandeling { background:#fef9c3; border:1px solid #f3e8a5; border-radius:16px; padding:0; }
+.dialog-status-afgerond { background:#dcfce7; border:1px solid #b7e6ca; border-radius:16px; padding:0; }
+/* Inner form gets transparent so tint shows through */
+.dialog-status-nieuw .dialog,
+.dialog-status-in_behandeling .dialog,
+.dialog-status-afgerond .dialog { background:transparent; box-shadow:none; padding:24px; }
+/* Slight separation for note items against tinted background */
+.dialog-status-nieuw .note-item { background:#fbd9d9; }
+.dialog-status-in_behandeling .note-item { background:#f4ecc9; }
+.dialog-status-afgerond .note-item { background:#c8f5dc; }
 .dlg-body { font-size:.9rem; line-height:1.4; display:flex; flex-direction:column; gap:14px; }
 .note-box { display:flex; gap:8px; }
 .note-box textarea { flex:1; resize:vertical; }

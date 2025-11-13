@@ -20,7 +20,7 @@ const state = {
 	supportsUpdatedAt: false,
 	supportsOrderNo: undefined,
 	statusOverrides:{},
-	supportsReferrerEmail: undefined,
+	supportsReferrerEmail: false, // default false to avoid initial missing-field errors
 	productsCache:[],
 };
 
@@ -36,7 +36,7 @@ async function gqlRequest(query, variables){ const doFetch=async()=>{ const head
 // GraphQL documents
 const GQL={
 	listOrders:`query($where: orders_bool_exp){ orders(order_by:{created_at:desc}, where:$where){ order_no id klanttype naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`,
-	orderByPk:`query($id: uuid!){ orders_by_pk(id:$id){ order_no id klanttype naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`,
+	orderByPk:`query($id: uuid!){ orders_by_pk(id:$id){ order_no id klanttype naam telefoon email adres producten totaal status opmerkingen created_at updated_at } }`, // referrer_email omitted; added dynamically if supported
 	orderNotes:`query($orderId: uuid!){ order_notes(where:{order_id:{_eq:$orderId}}, order_by:{created_at:desc}){ id note created_at } }`,
 	updateOrder:`mutation($id: uuid!, $changes: orders_set_input!){ update_orders_by_pk(pk_columns:{id:$id}, _set:$changes){ id } }`,
 	addNote:`mutation($orderId: uuid!, $note:String!){ insert_order_notes_one(object:{order_id:$orderId, note:$note}){ id } }`,
@@ -64,6 +64,32 @@ function renderOrders(list,supportsStatus){ const c=q('#ordersContainer'); if(!l
 
 async function openOrderDialog(order){ const dlg=q('#orderDialog'); const num=order.order_no!=null?formatOrderNo(order.order_no):order.id; q('#dlgTitle').textContent=`Bestelling ${num}`; let notes=[]; try{ const n=await gqlRequest(GQL.orderNotes,{ orderId:order.id }); notes=n.order_notes; }catch{} const orderDate=formatDateOnly(order.created_at); q('#dlgBody').innerHTML=`<div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${order.status||'nieuw'}">${allowedNextStatuses(order.status||'nieuw').map(s=>`<option value="${s}" ${s===order.status?'selected':''}>${s}</option>`).join('')}</select></div><div style="font-size:.75rem;font-weight:600;opacity:.75">Bestelddatum: ${orderDate}</div></div><div><strong>Naam:</strong> ${order.naam||'-'}</div><div><strong>Telefoon:</strong> ${order.telefoon||'-'}</div><div><strong>E-mail:</strong> ${order.email||'-'}</div><div><strong>Adres:</strong> ${order.adres||'-'}</div><div><strong>Producten (legacy tekst):</strong><pre style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;margin:4px 0">${order.producten||'-'}</pre></div><div><strong>Opmerkingen klant:</strong> ${order.opmerkingen||'Geen'}</div><hr/><div class="note-box"><textarea id="noteInput" rows="3" placeholder="Interne notitie toevoegen..."></textarea><button id="addNoteBtn" class="btn">Toevoegen</button></div><div class="notes-list">${notes.map(n=>`<div class="note-item">${n.note}<div class="timestamp">${new Date(n.created_at).toLocaleString()}</div></div>`).join('')}</div>`; dlg.showModal(); q('#addNoteBtn').onclick=async()=>{ const note=q('#noteInput').value.trim(); if(!note) return; await gqlRequest(GQL.addNote,{ orderId:order.id, note:note.slice(0,1000) }); dlg.close(); await loadOrders(); }; q('#dlgStatusSelect').onchange=async ev=>{ const next=ev.target.value; try{ await gqlRequest(GQL.updateStatus,{ id:order.id, status:next }); }catch(e){ if(/updated_at/i.test(e.message||'')){ await gqlRequest(GQL.updateStatusMin,{ id:order.id, status:next }); } } dlg.close(); await loadOrders(); }; }
 
+// Robust fetch for order details with persistent capability flags
+async function fetchOrderById(id){
+	// If we already know referrer_email unsupported, use base query directly
+	if(state.supportsReferrerEmail === false){
+		const d = await gqlRequest(GQL.orderByPk,{ id });
+		return d.orders_by_pk;
+	}
+	// Try query including referrer_email dynamically
+	const full = `query($id: uuid!){ orders_by_pk(id:$id){ order_no id klanttype naam telefoon email adres producten totaal status opmerkingen referrer_email created_at updated_at } }`;
+	try {
+		const d = await gqlRequest(full,{ id });
+		// Field exists; set flag true
+		state.supportsReferrerEmail = true;
+		return d.orders_by_pk;
+	} catch(e){
+		const msg = e.message||String(e);
+		if(/field ['"]?referrer_email['"]? not found/i.test(msg)){
+			state.supportsReferrerEmail = false;
+			// Retry without field
+			const d2 = await gqlRequest(GQL.orderByPk,{ id });
+			return d2.orders_by_pk;
+		}
+		throw e;
+	}
+}
+
 // ----- Products -----
 async function loadProducts(){ let data; try{ data=await gqlRequest(GQL.listProducts,{}); }catch(e){ q('#productsContainer').innerHTML=`<div class="panel" style="color:#b91c1c">${e.message||e}</div>`; return; } state.productsCache=data.products; renderProducts(data.products); }
 
@@ -89,7 +115,7 @@ function setActiveTab(){ $$('.tabbar .tab').forEach(b=>b.classList.remove('activ
 
 async function renderView(){ if(state.view==='orders'){ show(q('#statusSummary')); show(q('#ordersContainer')); hide(q('#customersContainer')); hide(q('#productsContainer')); await loadOrders(); } else if(state.view==='customers'){ hide(q('#statusSummary')); hide(q('#ordersContainer')); show(q('#customersContainer')); hide(q('#productsContainer')); q('#customersContainer').innerHTML='<div class="panel">(Klanten lijst nog niet geïmplementeerd in deze build)</div>'; } else if(state.view==='products'){ hide(q('#statusSummary')); hide(q('#ordersContainer')); hide(q('#customersContainer')); show(q('#productsContainer')); await loadProducts(); } }
 
-function wireEvents(){ const doLogin=async()=>{ const email=q('#email').value.trim(); const pwd=q('#password').value; const msg=q('#authMsg'); msg.textContent='Bezig met inloggen...'; msg.className='msg'; try{ await signIn(email,pwd); msg.textContent='Ingelogd'; msg.className='msg success'; hide(q('#authSection')); show(q('#appSection')); await renderView(); }catch(e){ msg.textContent='Login fout: '+(e.message||String(e)); msg.className='msg error'; console.warn('[login] error',e); } }; q('#loginBtn').onclick=e=>{ e.preventDefault(); doLogin(); }; q('#authForm')?.addEventListener('submit',e=>{ e.preventDefault(); doLogin(); }); q('#logoutBtn').onclick=()=>{ state.accessToken=null; state.refreshToken=null; state.user=null; saveTokens(); hide(q('#appSection')); show(q('#authSection')); const msg=q('#authMsg'); msg.textContent='Uitgelogd'; msg.className='msg'; }; q('#refreshBtn').onclick=()=>renderView(); q('#tabOrders').onclick=()=>{ state.view='orders'; setActiveTab(); renderView(); }; q('#tabCustomers').onclick=()=>{ state.view='customers'; setActiveTab(); renderView(); }; q('#tabProducts').onclick=()=>{ state.view='products'; setActiveTab(); renderView(); }; q('#ordersContainer').addEventListener('click', async ev=>{ const btn=ev.target.closest('button[data-act]'); if(!btn) return; const card=ev.target.closest('.order-card'); const id=card?.dataset?.id; if(!id) return; let res; try{ res=await gqlRequest(GQL.orderByPk,{ id }); }catch(e){ alert(e.message||e); return; } if(btn.dataset.act==='detail') openOrderDialog(res.orders_by_pk); }); q('#ordersContainer').addEventListener('change', async ev=>{ const sel=ev.target.closest('select.status-select'); if(!sel) return; const id=sel.getAttribute('data-order-id'); const next=sel.value; try{ await gqlRequest(GQL.updateStatus,{ id, status:next }); }catch(e){ if(/updated_at/i.test(e.message||'')){ await gqlRequest(GQL.updateStatusMin,{ id, status:next }); } else alert('Kon status niet wijzigen: '+(e.message||e)); } await loadOrders(); }); }
+function wireEvents(){ const doLogin=async()=>{ const email=q('#email').value.trim(); const pwd=q('#password').value; const msg=q('#authMsg'); msg.textContent='Bezig met inloggen...'; msg.className='msg'; try{ await signIn(email,pwd); msg.textContent='Ingelogd'; msg.className='msg success'; hide(q('#authSection')); show(q('#appSection')); await renderView(); }catch(e){ msg.textContent='Login fout: '+(e.message||String(e)); msg.className='msg error'; console.warn('[login] error',e); } }; q('#loginBtn').onclick=e=>{ e.preventDefault(); doLogin(); }; q('#authForm')?.addEventListener('submit',e=>{ e.preventDefault(); doLogin(); }); q('#logoutBtn').onclick=()=>{ state.accessToken=null; state.refreshToken=null; state.user=null; saveTokens(); hide(q('#appSection')); show(q('#authSection')); const msg=q('#authMsg'); msg.textContent='Uitgelogd'; msg.className='msg'; }; q('#refreshBtn').onclick=()=>renderView(); q('#tabOrders').onclick=()=>{ state.view='orders'; setActiveTab(); renderView(); }; q('#tabCustomers').onclick=()=>{ state.view='customers'; setActiveTab(); renderView(); }; q('#tabProducts').onclick=()=>{ state.view='products'; setActiveTab(); renderView(); }; q('#ordersContainer').addEventListener('click', async ev=>{ const btn=ev.target.closest('button[data-act]'); if(!btn) return; const card=ev.target.closest('.order-card'); const id=card?.dataset?.id; if(!id) return; if(btn.dataset.act==='detail'){ try{ const order=await fetchOrderById(id); if(order) openOrderDialog(order); else alert('Bestelling niet gevonden'); }catch(e){ alert('Fout bij laden details: '+(e.message||e)); } } }); q('#ordersContainer').addEventListener('change', async ev=>{ const sel=ev.target.closest('select.status-select'); if(!sel) return; const id=sel.getAttribute('data-order-id'); const next=sel.value; try{ await gqlRequest(GQL.updateStatus,{ id, status:next }); }catch(e){ if(/updated_at/i.test(e.message||'')){ await gqlRequest(GQL.updateStatusMin,{ id, status:next }); } else alert('Kon status niet wijzigen: '+(e.message||e)); } await loadOrders(); }); }
 
 (async function main(){ console.info('[admin] build v20251113e initializing'); loadTokens(); wireEvents(); if(state.accessToken){ hide(q('#authSection')); show(q('#appSection')); try{ await renderView(); }catch(e){ console.warn('initial load failed',e); } }
 })();

@@ -13,7 +13,7 @@ Structure:
    ```
    HASURA_GRAPHQL_ADMIN_SECRET=replace_me
    ```
-3. To create an orders table manually, add a migration file under `nhost/hasura/migrations/` named e.g. `0001_create_orders.sql` with:
+3. To create an orders table manually (now relocated), add a migration file under `hasura/migrations/` named e.g. `0001_create_orders.sql` with:
    ```sql
    CREATE EXTENSION IF NOT EXISTS pgcrypto;
    CREATE TABLE public.orders (
@@ -62,7 +62,7 @@ If you previously created a capital `Nhost` folder, remove or rename it to `nhos
 The npm package you installed (`nhost@0.1.11`) is NOT the official Nhost CLI (no `bin` field). Until the official CLI is published under a distinct name again, continue with manual setup + SDK.
 
 ## New Admin Schema (Customers & Subscriptions)
-Migrations added in this repo:
+Migrations now live under `hasura/migrations/`:
 - `0005_create_customers.sql`
 - `0006_create_subscriptions.sql`
 - `0007_create_subscription_adjustments.sql`

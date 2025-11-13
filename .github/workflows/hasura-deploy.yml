@@ -2,8 +2,8 @@ name: Deploy Hasura
 on:
   push:
     paths:
-      - 'nhost/hasura/migrations/**'
-      - 'nhost/hasura/metadata/**'
+      - 'hasura/migrations/**'
+      - 'hasura/metadata/**'
     branches: [ main ]
 
 jobs:
@@ -18,5 +18,6 @@ jobs:
           HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_ADMIN_SECRET }}
           HASURA_GRAPHQL_ENDPOINT: ${{ secrets.HASURA_GRAPHQL_ENDPOINT }}
         run: |
+          cd hasura
           hasura migrate apply --endpoint $HASURA_GRAPHQL_ENDPOINT --admin-secret $HASURA_GRAPHQL_ADMIN_SECRET --all-databases
           hasura metadata apply --endpoint $HASURA_GRAPHQL_ENDPOINT --admin-secret $HASURA_GRAPHQL_ADMIN_SECRET

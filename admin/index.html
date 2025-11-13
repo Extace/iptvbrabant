@@ -31,6 +31,7 @@
       <div class="tabbar">
         <button id="tabOrders" class="tab active">Bestellingen</button>
         <button id="tabCustomers" class="tab">Klanten</button>
+        <button id="tabProducts" class="tab">Producten</button>
       </div>
       <div class="toolbar">
         <div>
@@ -53,6 +54,7 @@
     <div id="statusSummary" class="status-summary hidden"></div>
     <div id="ordersContainer" class="list"></div>
       <div id="customersContainer" class="list hidden"></div>
+      <div id="productsContainer" class="list hidden"></div>
 
       <dialog id="customerDialog">
         <form method="dialog" class="dialog">
@@ -97,9 +99,20 @@
           </div>
         </form>
       </dialog>
+
+      <dialog id="productDialog">
+        <form method="dialog" class="dialog">
+          <h3 id="productDlgTitle">Product</h3>
+          <div id="productDlgBody" class="dlg-body"></div>
+          <div class="dlg-actions">
+            <button id="productCancelBtn" type="button" class="btn btn-secondary">Annuleren</button>
+            <button id="productSaveBtn" type="button" class="btn">Opslaan</button>
+          </div>
+        </form>
+      </dialog>
     </section>
   </div>
 
-  <script src="app.v20251113d.js" defer></script>
+  <script src="app.v20251113e.js" defer></script>
 </body>
 </html>

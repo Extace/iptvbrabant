@@ -1,9 +1,6 @@
 name: Deploy Hasura
 on:
   push:
-    paths:
-      - 'hasura/migrations/**'
-      - 'hasura/metadata/**'
     branches: [ main ]
 
 jobs:

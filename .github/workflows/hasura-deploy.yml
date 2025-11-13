@@ -18,9 +18,7 @@ jjobs:
       - name: Apply migrations & metadata
         run: |
           cd hasura
-          ls -la           # Debug: confirms config.yaml exists before running commands
+          echo "Endpoint: $HASURA_GRAPHQL_ENDPOINT"
+          echo "Admin Secret: $HASURA_GRAPHQL_ADMIN_SECRET"
           hasura migrate apply --endpoint "$HASURA_GRAPHQL_ENDPOINT" --admin-secret "$HASURA_GRAPHQL_ADMIN_SECRET" --all-databases
           hasura metadata apply --endpoint "$HASURA_GRAPHQL_ENDPOINT" --admin-secret "$HASURA_GRAPHQL_ADMIN_SECRET"
-        env:
-          HASURA_GRAPHQL_ADMIN_SECRET: ${{ secrets.HASURA_GRAPHQL_ADMIN_SECRET }}
-          HASURA_GRAPHQL_ENDPOINT: ${{ secrets.HASURA_GRAPHQL_ENDPOINT }}

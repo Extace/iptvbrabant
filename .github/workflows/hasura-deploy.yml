@@ -16,6 +16,7 @@ jobs:
       - name: Apply migrations & metadata
         run: |
           cd hasura
+          ls -l config.yaml # Debug: show config.yaml presence
           hasura migrate apply --endpoint "$HASURA_GRAPHQL_ENDPOINT" --admin-secret "$HASURA_GRAPHQL_ADMIN_SECRET" --all-databases
           hasura metadata apply --endpoint "$HASURA_GRAPHQL_ENDPOINT" --admin-secret "$HASURA_GRAPHQL_ADMIN_SECRET"
         env:

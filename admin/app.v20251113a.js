@@ -639,9 +639,6 @@ async function openOrderDialog(order) {
 		<div id="field-producten"><strong>Producten:</strong> <pre class="value" style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;margin:4px 0">${order.producten || '-'}</pre></div>
 		<div id="field-opmerkingen"><strong>Klantopmerking:</strong> ${order.opmerkingen ? `<pre class="value" style=\"white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px;margin:4px 0\">${order.opmerkingen}</pre>` : '<span class="value">Geen</span>'}</div>
 		${(state.supportsReferrerEmail !== false && order.referrer_email) ? `<div id="field-refemail"><strong>Referral (e-mail):</strong> <span class="value">${order.referrer_email}</span></div>` : ''}
-		<div id="editControls">
-			<button id="editOrderBtn" type="button" class="btn btn-secondary" style="font-size:.7rem">Bewerken</button>
-		</div>
 		<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0"/>
 		<div class="note-box">
 			<textarea id="noteInput" rows="3" placeholder="Interne notitie toevoegen..."></textarea>
@@ -651,6 +648,14 @@ async function openOrderDialog(order) {
 			${notes.map(n => `<div class="note-item">${n.note}<div class="timestamp">${new Date(n.created_at).toLocaleString()}</div></div>`).join('')}
 		</div>
 	`;
+
+	// Ensure edit button is placed inside actions row aligned with Sluiten
+	const actions = dlg.querySelector('.dlg-actions');
+	if (actions && !actions.querySelector('#editOrderBtn')) {
+		const eb = document.createElement('button');
+		eb.id = 'editOrderBtn'; eb.type='button'; eb.className='btn btn-secondary'; eb.style.fontSize='.7rem'; eb.textContent='Bewerken';
+		actions.appendChild(eb);
+	}
 
 	// Apply status-based background color class to dialog parent
 	dlg.classList.remove('dialog-status-nieuw','dialog-status-in_behandeling','dialog-status-afgerond');

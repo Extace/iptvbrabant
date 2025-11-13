@@ -424,6 +424,15 @@ const GQL = {
 	`,
 };
 
+// Klanttype keuzelijst (uitbreidbaar)
+const KLANTTYPE_OPTIONS = [
+    'Nieuwe klant',
+    'Bestaande klant',
+    'Referral',
+    'Upgrade',
+    'Overig'
+];
+
 // UI logic
 function show(el) { el.classList.remove('hidden'); }
 function hide(el) { el.classList.add('hidden'); }
@@ -662,8 +671,15 @@ async function openOrderDialog(order) {
 		const wrap = q('#'+id); if (!wrap) return;
 		const valEl = wrap.querySelector('.value') || wrap.querySelector('pre.value');
 		let input;
-		if (kind === 'textarea') { input = document.createElement('textarea'); input.rows = 3; }
-		else { input = document.createElement('input'); input.type = kind; }
+		if (id === 'field-klanttype') {
+			input = document.createElement('select');
+			KLANTTYPE_OPTIONS.forEach(opt => { const o=document.createElement('option'); o.value=opt; o.textContent=opt; input.appendChild(o); });
+			input.value = value || KLANTTYPE_OPTIONS[0];
+		} else if (kind === 'textarea') {
+			input = document.createElement('textarea'); input.rows = (id === 'field-producten') ? 6 : 3;
+		} else {
+			input = document.createElement('input'); input.type = kind;
+		}
 		input.value = value || '';
 		input.style.width='100%'; input.style.margin='4px 0';
 		if (valEl) valEl.replaceWith(input);
@@ -671,6 +687,7 @@ async function openOrderDialog(order) {
 	}
 
 	async function saveEdits() {
+		clearErrors();
 		const changed = {}; const diffs = [];
 		collectChange('naam','field-naam');
 		collectChange('telefoon','field-telefoon');
@@ -680,11 +697,23 @@ async function openOrderDialog(order) {
 		collectChange('producten','field-producten');
 		collectChange('opmerkingen','field-opmerkingen');
 		function collectChange(field, id){
-			const wrap = q('#'+id); if (!wrap) return; const input = wrap.querySelector('input,textarea'); if (!input) return;
+			const wrap = q('#'+id); if (!wrap) return; const input = wrap.querySelector('input,textarea,select'); if (!input) return;
 			const before = original[field] || ''; const after = (input.value||'').trim();
 			if (after !== (before||'')) { changed[field] = after || null; diffs.push(`${field}: "${truncate(before)}" → "${truncate(after)}"`); }
 		}
 		function truncate(v){ if (v==null) return ''; const s=String(v); return s.length>40? s.slice(0,37)+'…': s; }
+
+		// Validatie
+		const errors=[];
+		const naamInput = q('#field-naam input, #field-naam textarea, #field-naam select');
+		if (naamInput && !naamInput.value.trim()) { errors.push('Naam is verplicht'); markError(naamInput); }
+		const emailInput = q('#field-email input');
+		if (emailInput && emailInput.value.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailInput.value.trim())) { errors.push('E-mail formaat ongeldig'); markError(emailInput); }
+		const telInput = q('#field-telefoon input');
+		if (telInput && telInput.value.trim() && !/^0[0-9]{9}$/.test(telInput.value.trim())) { errors.push('Telefoon moet 10 cijfers beginnen met 0'); markError(telInput); }
+		const prodInput = q('#field-producten textarea');
+		if (prodInput && prodInput.value.trim().length===0) { errors.push('Producten mogen niet leeg zijn'); markError(prodInput); }
+		if (errors.length){ showErrors(errors); return; }
 		if (!Object.keys(changed).length){ editBtn.textContent='Geen wijzigingen'; setTimeout(()=>{ dlg.close(); openOrderDialog(original); }, 800); return; }
 		editBtn.disabled=true; editBtn.textContent='Opslaan…';
 		// Build dynamic mutation
@@ -711,6 +740,14 @@ async function openOrderDialog(order) {
 	}
 
 	editBtn.onclick = () => { if (!inEdit) enterEdit(); else saveEdits(); };
+
+	function markError(el){ el.style.outline='2px solid #dc2626'; }
+	function clearErrors(){ const box=q('#editErrorBox'); if (box) box.remove(); $$('input,textarea,select').forEach(e=>{ if (e.style) e.style.outline=''; }); }
+	function showErrors(list){
+		const box=document.createElement('div'); box.id='editErrorBox'; box.style.background='#fee2e2'; box.style.border='1px solid #f8d5d5'; box.style.color='#b91c1c'; box.style.padding='8px 10px'; box.style.borderRadius='8px'; box.style.fontSize='.7rem'; box.style.margin='6px 0';
+		box.innerHTML='<strong>Validatie fouten:</strong><br>'+list.map(e=>'- '+e).join('<br>');
+		const body=q('#dlgBody'); const statusRow=body.firstElementChild; body.insertBefore(box, statusRow.nextSibling);
+	}
 }
 
 async function loadAndRender() {

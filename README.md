@@ -34,3 +34,4 @@ Notes:
 ## Additional Documentation
 
 - [What is an Agent Session?](AGENT_SESSIONS.md) - Learn about GitHub Copilot agent sessions and how they work
+# Trigger Hasura deploy workflow

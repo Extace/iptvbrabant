@@ -639,7 +639,7 @@ async function openOrderDialog(order) {
 		<div id="field-producten"><strong>Producten:</strong> <pre class="value" style="white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;padding:8px;border-radius:6px;margin:4px 0">${order.producten || '-'}</pre></div>
 		<div id="field-opmerkingen"><strong>Klantopmerking:</strong> ${order.opmerkingen ? `<pre class="value" style=\"white-space:pre-wrap;background:#fff;border:1px dashed #e2e8f0;padding:8px;border-radius:6px;margin:4px 0\">${order.opmerkingen}</pre>` : '<span class="value">Geen</span>'}</div>
 		${(state.supportsReferrerEmail !== false && order.referrer_email) ? `<div id="field-refemail"><strong>Referral (e-mail):</strong> <span class="value">${order.referrer_email}</span></div>` : ''}
-		<div id="editControls" style="display:flex;gap:8px;margin-top:4px">
+		<div id="editControls">
 			<button id="editOrderBtn" type="button" class="btn btn-secondary" style="font-size:.7rem">Bewerken</button>
 		</div>
 		<hr style="border:none;border-top:1px solid #e2e8f0;margin:8px 0"/>

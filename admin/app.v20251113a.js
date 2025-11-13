@@ -440,6 +440,16 @@ function formatOrderNo(n){
 	try { const s = String(parseInt(n,10)); return '#' + s.padStart(5,'0'); } catch { return ''; }
 }
 
+function formatDateOnly(ts){
+	try {
+		const d = new Date(ts);
+		const dd = String(d.getDate()).padStart(2,'0');
+		const mm = String(d.getMonth()+1).padStart(2,'0');
+		const yyyy = d.getFullYear();
+		return `${dd}-${mm}-${yyyy}`;
+	} catch { return '-'; }
+}
+
 function renderOrders(list, supportsStatus) {
 	const c = q('#ordersContainer');
 	if (!list || !list.length) { c.innerHTML = '<div class="panel">Geen resultaten</div>'; return; }
@@ -467,7 +477,7 @@ function renderOrders(list, supportsStatus) {
 			<div class="row"><strong>Naam:</strong> ${o.naam || '(naam onbekend)'}</div>
 			<div class="row"><strong>Telefoon:</strong> ${o.telefoon || '-'}</div>
 			<div class="row"><strong>E-mail:</strong> ${o.email || '-'}</div>
-			<div class="row"><strong>Datum:</strong> ${new Date(o.created_at).toLocaleString()}</div>
+			<div class="row"><strong>Datum:</strong> ${formatDateOnly(o.created_at)}</div>
 			<div class="row"><strong>Klanttype:</strong> ${o.klanttype || '-'}</div>
 			${commentPreview}
 			<div class="actions" style="margin-top:8px">
@@ -564,8 +574,12 @@ async function openOrderDialog(order) {
 	const opts = allowedNextStatuses(effectiveStatus);
 	// Determine possible contact preference fields (schema might evolve)
 	const contactPref = order.contactvoorkeur || order.contact_preference || '-';
+	const orderDate = formatDateOnly(order.created_at);
 	q('#dlgBody').innerHTML = `
-		<div style="margin-bottom:4px"><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
+		<div style="margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+			<div><strong>Status:</strong> <select id="dlgStatusSelect" class="status-select status-${effectiveStatus}">${opts.map(s=>`<option value="${s}" ${effectiveStatus===s?'selected':''}>${s}</option>`).join('')}</select></div>
+			<div style="font-size:.75rem;font-weight:600;opacity:.75">Bestelddatum: ${orderDate}</div>
+		</div>
 		<div><strong>Naam:</strong> ${order.naam || '-'}</div>
 		<div><strong>Telefoonnummer:</strong> ${order.telefoon || '-'}</div>
 		<div><strong>E-mail:</strong> ${order.email || '-'}</div>

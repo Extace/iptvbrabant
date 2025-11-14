@@ -1,0 +1,92 @@
+name: Nhost Deploy
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'nhost/**'
+      - 'hasura/**'
+      - '.github/workflows/nhost-deploy.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'nhost/**'
+      - 'hasura/**'
+
+env:
+  NHOST_SUBDOMAIN: ${{ secrets.NHOST_SUBDOMAIN }}
+  NHOST_REGION: ${{ secrets.NHOST_REGION }}
+  NHOST_ADMIN_SECRET: ${{ secrets.NHOST_ADMIN_SECRET }}
+
+jobs:
+  deploy:
+    name: Deploy to Nhost
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Install Nhost CLI
+      run: |
+        curl -L https://github.com/nhost/cli/releases/latest/download/cli-linux-amd64 -o nhost
+        chmod +x nhost
+        sudo mv nhost /usr/local/bin/nhost
+        
+    - name: Verify Nhost CLI
+      run: nhost --version
+      
+    - name: Setup Nhost config
+      run: |
+        mkdir -p ~/.config/nhost
+        echo "${{ secrets.NHOST_CONFIG }}" > ~/.config/nhost/config.json
+        
+    - name: Login to Nhost
+      run: |
+        echo "${{ secrets.NHOST_PAT }}" | nhost auth login --pat
+        
+    - name: Apply Hasura migrations
+      run: |
+        cd nhost
+        nhost hasura migrate apply --all-databases
+        nhost hasura metadata apply
+        
+    - name: Deploy functions (if any)
+      run: |
+        if [ -d "nhost/functions" ]; then
+          cd nhost
+          nhost functions deploy
+        fi
+        
+    - name: Deploy to staging (on PR)
+      if: github.event_name == 'pull_request'
+      run: |
+        cd nhost
+        nhost deploy --environment staging
+        
+    - name: Deploy to production (on main)
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        cd nhost
+        nhost deploy --environment production
+        
+    - name: Comment PR with deployment info
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🚀 **Nhost Deployment**\n\nStaging environment updated with latest changes.\n\n📊 **Database migrations**: Applied\n🔧 **Functions**: Deployed\n\n[View Nhost Console](https://app.nhost.io/projects/${{ secrets.NHOST_SUBDOMAIN }})'
+          })

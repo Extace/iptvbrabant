@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhost Test</title>
+</head>
+<body>
+    <h1>Nhost Connectiviteitstest</h1>
+    <div id="results"></div>
+    <button onclick="testNhost()">Test Nhost Connectie</button>
+    
+    <script src="/js/nhostClient.v20251112d.js"></script>
+    <script>
+        async function testNhost() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                // Test 1: Client beschikbaarheid
+                console.log('nhost client:', window.nhost);
+                console.log('saveOrderNhost:', window.saveOrderNhost);
+                
+                if (!window.saveOrderNhost) {
+                    results.innerHTML = '<p style="color: red;">❌ saveOrderNhost niet gevonden</p>';
+                    return;
+                }
+                
+                // Test 2: Probeer een test order
+                const testOrder = {
+                    customer_name: "Test Gebruiker",
+                    customer_email: "test@nhost-test.com",
+                    customer_phone: "0612345678",
+                    package_selected: "Test Package",
+                    total_amount: 19.99,
+                    status: "test"
+                };
+                
+                const result = await window.saveOrderNhost(testOrder);
+                
+                if (result.ok) {
+                    results.innerHTML = `
+                        <p style="color: green;">✅ Nhost connectie succesvol!</p>
+                        <p>Order ID: ${result.id}</p>
+                    `;
+                } else {
+                    results.innerHTML = `
+                        <p style="color: orange;">⚠️ Connectie werkt maar er was een fout:</p>
+                        <pre>${JSON.stringify(result.error, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML = `
+                    <p style="color: red;">❌ Nhost test gefaald:</p>
+                    <pre>${error.message}</pre>
+                `;
+                console.error('Nhost test error:', error);
+            }
+        }
+        
+        // Auto-test na 2 seconden
+        setTimeout(testNhost, 2000);
+    </script>
+</body>
+</html>

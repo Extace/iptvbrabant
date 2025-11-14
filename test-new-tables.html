@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Nieuwe Tabellen</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .test-section { border: 1px solid #ddd; margin: 20px 0; padding: 15px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Nieuwe Database Tabellen</h1>
+    <p>Deze pagina test of de nieuwe migraties zijn toegepast na git push.</p>
+
+    <div class="test-section">
+        <h2>📊 Products Tabel Test</h2>
+        <button onclick="testProductsTable()">Test Products Tabel</button>
+        <button onclick="insertTestProduct()">Insert Test Product</button>
+        <div id="products-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>👥 Customers Tabel Test</h2>
+        <button onclick="testCustomersTable()">Test Customers Tabel</button>
+        <button onclick="insertTestCustomer()">Insert Test Customer</button>
+        <div id="customers-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Schema Introspection</h2>
+        <button onclick="listAllTables()">Lijst Alle Tabellen</button>
+        <div id="schema-results"></div>
+    </div>
+
+    <script>
+        const NHOST_SUBDOMAIN = 'yvkysucfvqxfaqbyeggp';
+        const NHOST_REGION = 'eu-west-2';
+        const GQL_ENDPOINT = `https://${NHOST_SUBDOMAIN}.graphql.${NHOST_REGION}.nhost.run/v1`;
+        
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        async function makeGraphQLRequest(query, variables = {}, role = 'anonymous') {
+            try {
+                const response = await fetch(GQL_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-hasura-role': role
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        variables: variables
+                    })
+                });
+
+                const result = await response.json();
+                return { ok: response.ok, data: result, status: response.status };
+            } catch (error) {
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function testProductsTable() {
+            addResult('products-results', '🔍 Testing products table...', 'info');
+            
+            const query = `
+                query {
+                    products(limit: 5) {
+                        id
+                        name
+                        price
+                        category
+                        active
+                        created_at
+                    }
+                }
+            `;
+
+            const result = await makeGraphQLRequest(query);
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const products = result.data.data?.products || [];
+                addResult('products-results', `✅ Products tabel gevonden! ${products.length} items`, 'success');
+                if (products.length > 0) {
+                    addResult('products-results', `<pre>${JSON.stringify(products, null, 2)}</pre>`, 'info');
+                }
+            } else {
+                addResult('products-results', `❌ Products tabel test gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function insertTestProduct() {
+            addResult('products-results', '🔨 Inserting test product...', 'info');
+            
+            const mutation = `
+                mutation InsertProduct($object: products_insert_input!) {
+                    insert_products_one(object: $object) {
+                        id
+                        name
+                        price
+                        sku
+                        created_at
+                    }
+                }
+            `;
+
+            const testProduct = {
+                name: "Test Product " + Date.now(),
+                description: "Product toegevoegd via GitOps test",
+                price: 29.99,
+                category: "test",
+                sku: "TEST-" + Date.now(),
+                stock_quantity: 100,
+                active: true,
+                featured: false
+            };
+
+            const result = await makeGraphQLRequest(mutation, { object: testProduct });
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const product = result.data.data?.insert_products_one;
+                addResult('products-results', `✅ Product toegevoegd! ID: ${product?.id}`, 'success');
+                addResult('products-results', `<pre>${JSON.stringify(product, null, 2)}</pre>`, 'info');
+            } else {
+                addResult('products-results', `❌ Product insert gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function testCustomersTable() {
+            addResult('customers-results', '🔍 Testing customers table...', 'info');
+            
+            const query = `
+                query {
+                    customers_new(limit: 5) {
+                        id
+                        email
+                        first_name
+                        last_name
+                        active
+                        created_at
+                    }
+                }
+            `;
+
+            const result = await makeGraphQLRequest(query);
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const customers = result.data.data?.customers_new || [];
+                addResult('customers-results', `✅ Customers tabel gevonden! ${customers.length} items`, 'success');
+                if (customers.length > 0) {
+                    addResult('customers-results', `<pre>${JSON.stringify(customers, null, 2)}</pre>`, 'info');
+                }
+            } else {
+                addResult('customers-results', `❌ Customers tabel test gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function insertTestCustomer() {
+            addResult('customers-results', '🔨 Inserting test customer...', 'info');
+            
+            const mutation = `
+                mutation InsertCustomer($object: customers_new_insert_input!) {
+                    insert_customers_new_one(object: $object) {
+                        id
+                        email
+                        first_name
+                        last_name
+                        created_at
+                    }
+                }
+            `;
+
+            const testCustomer = {
+                email: `test${Date.now()}@gitops-test.com`,
+                first_name: "GitOps",
+                last_name: "Test",
+                phone: "0612345678",
+                address: { city: "Amsterdam", country: "NL" },
+                newsletter_subscribed: true,
+                active: true
+            };
+
+            const result = await makeGraphQLRequest(mutation, { object: testCustomer });
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const customer = result.data.data?.insert_customers_new_one;
+                addResult('customers-results', `✅ Customer toegevoegd! ID: ${customer?.id}`, 'success');
+                addResult('customers-results', `<pre>${JSON.stringify(customer, null, 2)}</pre>`, 'info');
+            } else {
+                addResult('customers-results', `❌ Customer insert gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function listAllTables() {
+            addResult('schema-results', '🔍 Listing all available tables...', 'info');
+            
+            const query = `
+                query {
+                    __schema {
+                        types {
+                            name
+                            kind
+                            fields {
+                                name
+                            }
+                        }
+                    }
+                }
+            `;
+
+            const result = await makeGraphQLRequest(query);
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const types = result.data.data?.__schema?.types || [];
+                const tableTypes = types.filter(t => 
+                    t.name && 
+                    !t.name.startsWith('__') && 
+                    t.kind === 'OBJECT' && 
+                    t.fields && 
+                    t.fields.length > 0 &&
+                    !['String', 'Int', 'Float', 'Boolean', 'ID'].includes(t.name)
+                ).map(t => ({
+                    name: t.name,
+                    fieldCount: t.fields.length
+                }));
+                
+                addResult('schema-results', `✅ Schema geladen! ${tableTypes.length} tabellen gevonden`, 'success');
+                addResult('schema-results', `<pre>${JSON.stringify(tableTypes, null, 2)}</pre>`, 'info');
+            } else {
+                addResult('schema-results', `❌ Schema introspection gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        // Auto-run tests when page loads
+        window.addEventListener('load', () => {
+            addResult('schema-results', '🎯 GitOps Test pagina geladen. Test je nieuwe tabellen!', 'info');
+            addResult('schema-results', `🔗 GraphQL Endpoint: ${GQL_ENDPOINT}`, 'info');
+            
+            // Auto test schema after 2 seconds
+            setTimeout(listAllTables, 2000);
+        });
+    </script>
+</body>
+</html>

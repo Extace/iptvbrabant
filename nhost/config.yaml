@@ -1,7 +1,32 @@
 version: 1
 backend:
-  subdomain: YOUR_SUBDOMAIN
-  region: eu-central-1
+  subdomain: ${NHOST_SUBDOMAIN}
+  region: ${NHOST_REGION:-eu-central-1}
 services:
   hasura:
     adminSecret: ${HASURA_GRAPHQL_ADMIN_SECRET}
+    version: v2.40.0
+    environment:
+      HASURA_GRAPHQL_CORS_DOMAIN: "*"
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "false"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: "startup, http-log, webhook-log, websocket-log"
+  postgres:
+    version: "14"
+  auth:
+    version: latest
+    redirections:
+      clientUrl: ${CLIENT_URL:-http://localhost:3000}
+      allowedUrls:
+        - ${CLIENT_URL:-http://localhost:3000}
+        - https://${NHOST_SUBDOMAIN}.${NHOST_REGION}.nhost.run
+    smtp:
+      host: ${SMTP_HOST}
+      port: ${SMTP_PORT:-587}
+      user: ${SMTP_USER}
+      password: ${SMTP_PASSWORD}
+      secure: ${SMTP_SECURE:-false}
+      method: ${SMTP_METHOD:-LOGIN}
+      sender: ${SMTP_SENDER}
+  storage:
+    version: latest

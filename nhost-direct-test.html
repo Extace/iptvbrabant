@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhost Direct Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Nhost Direct Test (Geen CLI Nodig!)</h1>
+    
+    <div>
+        <button onclick="testConnection()">Test Database Connectie</button>
+        <button onclick="testSchema()">Test Schema Introspection</button>
+        <button onclick="createTestTable()">Maak Test Tabel (via GraphQL)</button>
+        <button onclick="insertTestData()">Insert Test Data</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const NHOST_SUBDOMAIN = 'yvkysucfvqxfaqbyeggp';
+        const NHOST_REGION = 'eu-west-2';
+        const GQL_ENDPOINT = `https://${NHOST_SUBDOMAIN}.graphql.${NHOST_REGION}.nhost.run/v1`;
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        async function makeGraphQLRequest(query, variables = {}, role = 'anonymous') {
+            try {
+                const response = await fetch(GQL_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-hasura-role': role
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        variables: variables
+                    })
+                });
+
+                const result = await response.json();
+                return { ok: response.ok, data: result, status: response.status };
+            } catch (error) {
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function testConnection() {
+            addResult('🔍 Testing database connection...', 'info');
+            
+            const query = `
+                query IntrospectionQuery {
+                    __schema {
+                        queryType { name }
+                        mutationType { name }
+                        subscriptionType { name }
+                    }
+                }
+            `;
+
+            const result = await makeGraphQLRequest(query);
+            
+            if (result.ok && result.data && !result.data.errors) {
+                addResult('✅ Database connectie succesvol!', 'success');
+                addResult(`<pre>${JSON.stringify(result.data, null, 2)}</pre>`, 'info');
+            } else {
+                addResult(`❌ Database connectie gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function testSchema() {
+            addResult('🔍 Testing schema introspection...', 'info');
+            
+            const query = `
+                query {
+                    __type(name: "mutation_root") {
+                        fields {
+                            name
+                            description
+                        }
+                    }
+                }
+            `;
+
+            const result = await makeGraphQLRequest(query);
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const mutations = result.data.data?.__type?.fields || [];
+                addResult(`✅ Schema geladen! Gevonden ${mutations.length} mutations`, 'success');
+                
+                // Toon enkele mutations
+                const sampleMutations = mutations.slice(0, 10).map(m => m.name).join(', ');
+                addResult(`Beschikbare mutations: ${sampleMutations}`, 'info');
+            } else {
+                addResult(`❌ Schema introspection gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function createTestTable() {
+            addResult('🔨 Probeer test tabel te maken (via raw SQL)...', 'info');
+            
+            // We kunnen geen DDL via GraphQL, maar we kunnen wel bestaande tabellen bekijken
+            const query = `
+                query {
+                    __schema {
+                        types {
+                            name
+                            kind
+                            fields {
+                                name
+                                type {
+                                    name
+                                    kind
+                                }
+                            }
+                        }
+                    }
+                }
+            `;
+
+            const result = await makeGraphQLRequest(query);
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const types = result.data.data?.__schema?.types || [];
+                const tableTypes = types.filter(t => 
+                    t.name && 
+                    !t.name.startsWith('__') && 
+                    t.kind === 'OBJECT' && 
+                    t.fields && 
+                    t.fields.length > 0
+                ).map(t => t.name);
+                
+                addResult(`✅ Bestaande tabellen gevonden: ${tableTypes.join(', ')}`, 'success');
+                addResult('💡 Voor nieuwe tabellen: ga naar Nhost Console → Database → Data', 'info');
+            } else {
+                addResult(`❌ Schema check gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+            }
+        }
+
+        async function insertTestData() {
+            addResult('📝 Probeer test data in bestaande orders tabel...', 'info');
+            
+            const mutation = `
+                mutation InsertTestOrder($object: orders_insert_input!) {
+                    insert_orders_one(object: $object) {
+                        id
+                        customer_name
+                        created_at
+                    }
+                }
+            `;
+
+            const testData = {
+                customer_name: "Test via Direct GraphQL",
+                customer_email: "test@direct.com", 
+                customer_phone: "0612345678",
+                package_selected: "Direct Test Package",
+                total_amount: 99.99,
+                status: "test"
+            };
+
+            const result = await makeGraphQLRequest(mutation, { object: testData });
+            
+            if (result.ok && result.data && !result.data.errors) {
+                const insertedOrder = result.data.data?.insert_orders_one;
+                addResult(`✅ Test order toegevoegd! ID: ${insertedOrder?.id}`, 'success');
+                addResult(`<pre>${JSON.stringify(insertedOrder, null, 2)}</pre>`, 'info');
+            } else {
+                addResult(`⚠️ Insert gefaald: ${JSON.stringify(result.data?.errors || result.error)}`, 'error');
+                addResult('💡 Mogelijk moet je permissions instellen in Nhost Console', 'info');
+            }
+        }
+
+        // Auto-test bij laden
+        window.addEventListener('load', () => {
+            addResult('🎯 Nhost Direct Test geladen. Geen CLI nodig!', 'info');
+            addResult(`🔗 Endpoint: ${GQL_ENDPOINT}`, 'info');
+        });
+    </script>
+</body>
+</html>

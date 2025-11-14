@@ -1,5 +1,5 @@
 version: 3
-endpoint: https://yvkysucfvqxfaqbyeggp.hasura.eu-west-2.nhost.run
-admin_secret: 3-$vC,H92n#f$5#QC^lib'@C4-MAu0p
+endpoint: http://localhost:1337
+admin_secret: ""
 metadata_directory: metadata
 migrations_directory: migrations
